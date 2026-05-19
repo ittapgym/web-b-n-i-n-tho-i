@@ -7,8 +7,8 @@
             <h1 class="hero-title">iPhone 17 Pro Max</h1>
             <p class="hero-subtitle">Đặt hàng ngay hôm nay!</p>
             <div class="hero-actions">
-              <AppleButton variant="primary">Sở hữu ngay</AppleButton>
-              <a href="#" class="apple-link">Tìm hiểu thêm</a>
+              <AppleButton variant="primary" @click="router.push('/dien-thoai')">Sở hữu ngay</AppleButton>
+              <a href="#" @click.prevent="router.push('/dien-thoai')" class="apple-link">Tìm hiểu thêm</a>
             </div>
           </div>
           <div class="hero-image-wrap">
@@ -37,8 +37,8 @@
             <h2 class="section-title">iPhone</h2>
             <p class="section-subtitle">Khám phá dòng sản phẩm iPhone mới nhất.</p>
             <div class="lineup-actions">
-              <AppleButton variant="primary" class="pill-btn">Tìm hiểu thêm</AppleButton>
-              <AppleButton variant="secondary" class="pill-btn">Mua iPhone</AppleButton>
+              <AppleButton variant="primary" class="pill-btn" @click="router.push('/dien-thoai')">Tìm hiểu thêm</AppleButton>
+              <AppleButton variant="secondary" class="pill-btn" @click="router.push('/dien-thoai')">Mua iPhone</AppleButton>
             </div>
           </div>
         </section>
@@ -52,8 +52,8 @@
                 <h2 class="promo-title">iPad <span class="air-text">air</span></h2>
                 <p class="promo-subtitle">Mạnh mẽ vượt trội với chip M4.</p>
                 <div class="promo-actions">
-                  <AppleButton variant="primary" class="pill-btn primary grid-btn">Tìm hiểu thêm</AppleButton>
-                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn">Mua ngay</AppleButton>
+                  <AppleButton variant="primary" class="pill-btn primary grid-btn" @click="router.push('/may-tinh-bang')">Tìm hiểu thêm</AppleButton>
+                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn" @click="router.push('/may-tinh-bang')">Mua ngay</AppleButton>
                 </div>
               </div>
               <img src="../assets/images/banners/promo_ipad_air_m4.svg" class="promo-img" alt="iPad Air" />
@@ -68,8 +68,8 @@
                 </h2>
                 <p class="promo-subtitle">Người đồng hành hoàn hảo cho sức khỏe của bạn.</p>
                 <div class="promo-actions">
-                  <AppleButton variant="primary" class="pill-btn primary grid-btn">Tìm hiểu thêm</AppleButton>
-                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn">Mua ngay</AppleButton>
+                  <AppleButton variant="primary" class="pill-btn primary grid-btn" @click="router.push('/phu-kien')">Tìm hiểu thêm</AppleButton>
+                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn" @click="router.push('/phu-kien')">Mua ngay</AppleButton>
                 </div>
               </div>
               <img src="../assets/images/banners/promo_apple_watch_series_11.svg" class="promo-img" alt="Watch" />
@@ -81,8 +81,8 @@
                 <h2 class="promo-title">MacBook <span class="air-text">air</span></h2>
                 <p class="promo-subtitle">Siêu mỏng. Siêu nhẹ. Siêu mạnh mẽ với chip M3.</p>
                 <div class="promo-actions">
-                  <AppleButton variant="primary" class="pill-btn primary grid-btn">Tìm hiểu thêm</AppleButton>
-                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn">Mua ngay</AppleButton>
+                  <AppleButton variant="primary" class="pill-btn primary grid-btn" @click="router.push('/laptop')">Tìm hiểu thêm</AppleButton>
+                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn" @click="router.push('/laptop')">Mua ngay</AppleButton>
                 </div>
               </div>
               <img src="../assets/images/banners/promo_macbook_air_m5.svg" class="promo-img" alt="MacBook" />
@@ -94,8 +94,8 @@
                 <h2 class="promo-title">AirPods <span class="pro-text">Pro</span></h2>
                 <p class="promo-subtitle">Âm thanh sống động. Chống ồn chủ động.</p>
                 <div class="promo-actions">
-                  <AppleButton variant="primary" class="pill-btn primary grid-btn">Tìm hiểu thêm</AppleButton>
-                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn">Mua ngay</AppleButton>
+                  <AppleButton variant="primary" class="pill-btn primary grid-btn" @click="router.push('/phu-kien')">Tìm hiểu thêm</AppleButton>
+                  <AppleButton variant="secondary" class="pill-btn secondary grid-btn" @click="router.push('/phu-kien')">Mua ngay</AppleButton>
                 </div>
               </div>
               <img src="../assets/images/banners/promo_airpodspro_3.svg" class="promo-img" alt="AirPods" />
