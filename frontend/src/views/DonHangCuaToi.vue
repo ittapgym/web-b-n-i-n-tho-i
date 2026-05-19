@@ -183,7 +183,7 @@ const fetchOrders = async () => {
       console.warn("User not logged in, skipping order fetch");
       return
     }
-    const res = await fetch('http://127.0.0.1:8000/don-hang/user/my-orders', {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/don-hang/user/my-orders`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (res.ok) {
@@ -198,7 +198,7 @@ const handleDeleteOrder = (orderId) => {
   triggerConfirm("Bạn có chắc chắn muốn ẩn đơn hàng này khỏi lịch sử của mình?", async () => {
     try {
       const token = localStorage.getItem('access_token') || localStorage.getItem('token')
-      const res = await fetch(`http://127.0.0.1:8000/don-hang/xoa/${orderId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/don-hang/xoa/${orderId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })

@@ -64,7 +64,7 @@ const loading = ref(true);
 
 const fetchProducts = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/san-pham/danh-muc/ipad');
+    const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/san-pham/danh-muc/ipad`);
     if (response.ok) {
       products.value = await response.json();
     }

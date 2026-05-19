@@ -1365,7 +1365,7 @@ const loyaltyLevels = ref([])
 
 const fetchLoyaltyLevels = async () => {
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/admin/loyalty-configs')
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/api/admin/loyalty-configs`)
     if (res.ok) {
       loyaltyLevels.value = await res.json()
     }
@@ -2237,7 +2237,7 @@ const getNextRankInfo = (user) => {
 const getImageUrl = (url) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `http://127.0.0.1:8000${url}`
+  return `${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}${url}`
 }
 
 const getStatusLabel = (status) => {

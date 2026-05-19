@@ -74,7 +74,7 @@ const showLayout = computed(() => {
 
 const checkMaintenance = async () => {
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/admin/config');
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/api/admin/config`);
     if (res.ok) {
       const data = await res.json();
       isMaintenance.value = !!data.maintenanceMode;

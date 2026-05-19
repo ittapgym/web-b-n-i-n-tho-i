@@ -326,7 +326,7 @@ const lookupWarranty = async () => {
   warrantyResult.value = null
   
   try {
-    const res = await fetch(`http://127.0.0.1:8000/don-hang/tra-cuu-bao-hanh/${encodeURIComponent(query)}`)
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/don-hang/tra-cuu-bao-hanh/${encodeURIComponent(query)}`)
     if (res.ok) {
       const data = await res.json()
       warrantyResult.value = data
@@ -427,7 +427,7 @@ const closeHelpModal = () => {
 const submitStaticRequest = async () => {
   isSubmittingRequest.value = true
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/support/reset-requests', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/api/support/reset-requests`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

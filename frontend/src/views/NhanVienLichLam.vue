@@ -174,7 +174,7 @@ onMounted(() => {
 
 const fetchStaffSchedules = async () => {
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/admin/schedules');
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/api/admin/schedules`);
     if (res.ok) {
       const data = await res.json();
       // Filter by logged-in employee ID
