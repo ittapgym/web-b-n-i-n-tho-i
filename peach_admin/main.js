@@ -30,7 +30,7 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://via.placeholder.com https://store.storeimages.cdn-apple.com https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' http://127.0.0.1:8000; img-src 'self' data: https: http://127.0.0.1:8000; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com"
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://via.placeholder.com https://store.storeimages.cdn-apple.com https://fonts.googleapis.com https://fonts.gstatic.com; connect-src 'self' http://127.0.0.1:8000 https://peach-store-backend.onrender.com; img-src 'self' data: https: http://127.0.0.1:8000 https://peach-store-backend.onrender.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com"
         ]
       }
     });

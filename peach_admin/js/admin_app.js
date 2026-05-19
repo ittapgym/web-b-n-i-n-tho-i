@@ -64,7 +64,7 @@ createApp({
       
       const confirmAction = async () => {
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/admin/notifications/send', {
+          const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/notifications/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -393,7 +393,7 @@ createApp({
 
           // Lưu đoạn chat này vào Backend để nó xuất hiện trong trang Lịch sử Chat Admin!
           try {
-            await fetch('http://127.0.0.1:8000/api/admin/ai-logs', {
+            await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-logs', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -452,7 +452,7 @@ createApp({
           }
         }
 
-        const response = await fetch('http://127.0.0.1:8000/api/admin/ai-chat', {
+        const response = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -478,7 +478,7 @@ createApp({
 
           // Lưu đoạn chat này vào Backend để nó xuất hiện trong trang Lịch sử Chat Admin!
           try {
-            await fetch('http://127.0.0.1:8000/api/admin/ai-logs', {
+            await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-logs', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -507,7 +507,7 @@ createApp({
           });
 
           try {
-            await fetch('http://127.0.0.1:8000/api/admin/ai-logs', {
+            await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-logs', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -534,7 +534,7 @@ createApp({
         });
 
         try {
-          await fetch('http://127.0.0.1:8000/api/admin/ai-logs', {
+          await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-logs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -13,14 +13,10 @@ export function startInactivityMonitor() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('token')
     
-    try {
-      const { useNotificationStore } = await import('../stores/notification')
-      const notification = useNotificationStore()
-      if (notification && notification.show) {
-        notification.show('Phiên đăng nhập đã hết hạn do không hoạt động. Vui lòng đăng nhập lại.', 'error')
-      }
-    } catch (e) {
-      // fallback
+    const { useNotificationStore } = await import('../stores/notification')
+    const notification = useNotificationStore()
+    if (notification && notification.show) {
+      notification.show('Phiên đăng nhập đã hết hạn do không hoạt động. Vui lòng đăng nhập lại.', 'error')
     }
     
     setTimeout(() => {

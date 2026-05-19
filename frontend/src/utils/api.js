@@ -23,14 +23,10 @@ export async function apiRequest(endpoint, options = {}) {
     localStorage.removeItem('token')
     localStorage.setItem('redirect_after_login', window.location.pathname)
     
-    try {
-      const { useNotificationStore } = await import('../stores/notification')
-      const notification = useNotificationStore()
-      if (notification && notification.show) {
-        notification.show('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error')
-      }
-    } catch (e) {
-      // fallback
+    const { useNotificationStore } = await import('../stores/notification')
+    const notification = useNotificationStore()
+    if (notification && notification.show) {
+      notification.show('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error')
     }
     
     setTimeout(() => {

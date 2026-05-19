@@ -215,12 +215,12 @@
                      <div 
                         v-for="(imgUrl, imgIdx) in (Array.isArray(selectedSupportTicket.hinh_anh) ? selectedSupportTicket.hinh_anh : selectedSupportTicket.hinh_anh.split(';').filter(Boolean))" 
                         :key="imgIdx"
-                        @click="fullscreenImageUrl = imgUrl.startsWith('http') ? imgUrl : 'http://127.0.0.1:8000' + imgUrl"
+                        @click="fullscreenImageUrl = imgUrl.startsWith('http') ? imgUrl : (window.API_BASE || 'http://127.0.0.1:8000') + '' + imgUrl"
                         style="position: relative; width: 100px; height: 100px; border-radius: 10px; overflow: hidden; border: 1.5px solid rgba(0,0,0,0.08); cursor: pointer; transition: all 0.2s;"
                         onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
                         onmouseout="this.style.transform='none'; this.style.boxShadow='none';"
                      >
-                        <img :src="imgUrl.startsWith('http') ? imgUrl : 'http://127.0.0.1:8000' + imgUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+                        <img :src="imgUrl.startsWith('http') ? imgUrl : (window.API_BASE || 'http://127.0.0.1:8000') + '' + imgUrl" style="width: 100%; height: 100%; object-fit: cover;" />
                      </div>
                   </div>
                   

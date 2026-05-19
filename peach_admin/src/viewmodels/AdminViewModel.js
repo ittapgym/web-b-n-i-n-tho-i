@@ -274,7 +274,7 @@ window.AdminViewModel = {
 
     const fetchSystemConfig = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/config');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/config');
         if (res.ok) {
           const data = await res.json();
           Object.assign(systemConfig, data);
@@ -297,7 +297,7 @@ window.AdminViewModel = {
 
     const saveSettings = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/config', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(systemConfig)
@@ -323,7 +323,7 @@ window.AdminViewModel = {
     const cleanTempData = async () => {
       const action = async () => {
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/admin/clean-temp-data', { method: 'POST' });
+          const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/clean-temp-data', { method: 'POST' });
           if (res.ok) {
             const data = await res.json();
             if (window.showToast) {
@@ -366,7 +366,7 @@ window.AdminViewModel = {
     const fetchSupportTickets = async () => {
       loadingSupportTickets.value = true;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/support/admin/tickets');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/admin/tickets');
         if (res.ok) {
           supportTickets.value = await res.json();
         }
@@ -381,7 +381,7 @@ window.AdminViewModel = {
     const fetchAiLogs = async () => {
       loadingAiLogs.value = true;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/ai-logs');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-logs');
         if (res.ok) {
           aiLogs.value = await res.json();
           updateAiAnalytics();
@@ -396,7 +396,7 @@ window.AdminViewModel = {
     const deleteAiLog = async (id) => {
       const action = async () => {
         try {
-          const res = await fetch(`http://127.0.0.1:8000/api/admin/ai-logs/${id}`, {
+          const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/ai-logs/${id}`, {
             method: 'DELETE'
           });
           if (res.ok) {
@@ -430,7 +430,7 @@ window.AdminViewModel = {
 
       const action = async () => {
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/admin/ai-logs/action/clear-all', {
+          const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/ai-logs/action/clear-all', {
             method: 'DELETE'
           });
           if (res.ok) {
@@ -458,7 +458,7 @@ window.AdminViewModel = {
 
     const fetchPushCampaigns = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/notifications/campaigns');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/notifications/campaigns');
         if (res.ok) {
           pushCampaigns.value = await res.json();
         }
@@ -470,7 +470,7 @@ window.AdminViewModel = {
     const searchAuditQuery = ref('');
     const fetchAuditLogs = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/audit-logs');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/audit-logs');
         if (res.ok) {
           auditLogs.value = await res.json();
         }
@@ -492,7 +492,7 @@ window.AdminViewModel = {
 
     const updateSupportTicketStatus = async (ticketId, status) => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/support/admin/tickets/${ticketId}/status`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tickets/${ticketId}/status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status })
@@ -528,7 +528,7 @@ window.AdminViewModel = {
 
     const fetchLoyaltyLevels = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/loyalty-configs');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/loyalty-configs');
         if (res.ok) {
           loyaltyLevels.value = await res.json();
         }
@@ -585,7 +585,7 @@ window.AdminViewModel = {
           return;
         }
 
-        const res = await fetch(`http://127.0.0.1:8000/api/admin/loyalty-configs/${loyaltyForm.id}`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/loyalty-configs/${loyaltyForm.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -625,7 +625,7 @@ window.AdminViewModel = {
           return;
         }
 
-        const res = await fetch(`http://127.0.0.1:8000/api/admin/customers/${pointsForm.customerId}/points`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/customers/${pointsForm.customerId}/points`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1055,7 +1055,7 @@ window.AdminViewModel = {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/dashboard/stats');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/dashboard/stats');
         const data = await res.json();
         stats.value = {
           revenue: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.revenue || 0),
@@ -1072,14 +1072,14 @@ window.AdminViewModel = {
 
     const fetchActivities = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/activities');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/activities');
         activities.value = await res.json();
       } catch (e) { console.error("Lỗi tải hoạt động: ", e); }
     };
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/san-pham/');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/san-pham/');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         products.value = await res.json();
       } catch (e) { 
@@ -1253,8 +1253,8 @@ window.AdminViewModel = {
 
       try {
         const url = isEditingProduct.value 
-          ? `http://127.0.0.1:8000/san-pham/${editingProductId.value}`
-          : 'http://127.0.0.1:8000/san-pham/';
+          ? `${window.API_BASE || 'http://127.0.0.1:8000'}/san-pham/${editingProductId.value}`
+          : (window.API_BASE || 'http://127.0.0.1:8000') + '/san-pham/';
         
         const method = isEditingProduct.value ? 'PUT' : 'POST';
         
@@ -1287,7 +1287,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/san-pham/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/san-pham/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 fetchProducts();
                 if (window.showToast) window.showToast("Thành công", "Đã xóa sản phẩm thành công.", "success");
@@ -1302,7 +1302,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
-        fetch(`http://127.0.0.1:8000/san-pham/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/san-pham/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) fetchProducts(); })
           .catch(e => console.error("Lỗi khi xóa sản phẩm"));
       }
@@ -1388,7 +1388,7 @@ window.AdminViewModel = {
 
       try {
         if (window.showToast) window.showToast("Thông báo", "Đang tải ảnh lên...", "info");
-        const res = await fetch('http://127.0.0.1:8000/api/admin/upload', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/upload', {
           method: 'POST',
           body: formData
         });
@@ -1421,7 +1421,7 @@ window.AdminViewModel = {
         formData.append('file', files[i]);
 
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/admin/upload', {
+          const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/upload', {
             method: 'POST',
             body: formData
           });
@@ -1452,7 +1452,7 @@ window.AdminViewModel = {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem('access_token') || localStorage.getItem('token');
-        const res = await fetch('http://127.0.0.1:8000/don-hang/admin/all', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/don-hang/admin/all', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1504,7 +1504,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/don-hang/admin/xoa/${id}`, { 
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/admin/xoa/${id}`, { 
                 method: 'DELETE'
               });
               if (res.ok) {
@@ -1521,7 +1521,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm(`Bạn có chắc muốn xóa đơn hàng #${id}?`)) return;
-        fetch(`http://127.0.0.1:8000/don-hang/admin/xoa/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/admin/xoa/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) fetchOrders(); })
           .catch(e => console.error("Lỗi xóa đơn hàng"));
       }
@@ -1556,7 +1556,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/don-hang/admin/xoa-nhieu`, { 
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/admin/xoa-nhieu`, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(selectedOrderIds.value)
@@ -1576,7 +1576,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm(`Xóa vĩnh viễn ${selectedOrderIds.value.length} đơn hàng?`)) return;
-        fetch(`http://127.0.0.1:8000/don-hang/admin/xoa-nhieu`, { 
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/admin/xoa-nhieu`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(selectedOrderIds.value)
@@ -1604,7 +1604,7 @@ window.AdminViewModel = {
           async () => {
             try {
               // API call for bulk delete products
-              const res = await fetch(`http://127.0.0.1:8000/san-pham/xoa-nhieu`, { 
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/san-pham/xoa-nhieu`, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(selectedProductIds.value)
@@ -1624,7 +1624,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm(`Xóa vĩnh viễn ${selectedProductIds.value.length} sản phẩm?`)) return;
-        fetch(`http://127.0.0.1:8000/san-pham/xoa-nhieu`, { 
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/san-pham/xoa-nhieu`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(selectedProductIds.value)
@@ -1635,7 +1635,7 @@ window.AdminViewModel = {
     const updateOrderStatus = async (orderId, newStatus) => {
       try {
         const token = localStorage.getItem('access_token') || localStorage.getItem('token');
-        const res = await fetch(`http://127.0.0.1:8000/don-hang/cap-nhat-trang-thai/${orderId}`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/cap-nhat-trang-thai/${orderId}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -1653,7 +1653,7 @@ window.AdminViewModel = {
 
     const fetchInventoryLogs = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/inventory/logs');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/inventory/logs');
         if (res.ok) inventoryLogs.value = await res.json();
       } catch (e) { console.error("Lỗi tải nhật ký kho"); }
     };
@@ -1666,7 +1666,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/api/admin/inventory/logs/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/inventory/logs/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 fetchInventoryLogs();
                 if (window.showToast) window.showToast("Thành công", "Đã xóa phiếu kho.", "success");
@@ -1681,7 +1681,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm("Bạn có chắc chắn muốn xóa phiếu này?")) return;
-        fetch(`http://127.0.0.1:8000/api/admin/inventory/logs/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/inventory/logs/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) fetchInventoryLogs(); })
           .catch(e => console.error("Lỗi xóa log"));
       }
@@ -1742,7 +1742,7 @@ window.AdminViewModel = {
 
     const saveOrder = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/don-hang/admin/update/${orderEditForm.id}`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/admin/update/${orderEditForm.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderEditForm)
@@ -1804,7 +1804,7 @@ window.AdminViewModel = {
     const fetchCustomers = async () => {
       try {
         console.log("[DEBUG] Fetching customers list...");
-        const res = await fetch('http://127.0.0.1:8000/api/admin/customers/');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/customers/');
         if (res.ok) customers.value = await res.json();
       } catch (e) { console.error("Lỗi tải khách hàng"); }
     };
@@ -1818,7 +1818,7 @@ window.AdminViewModel = {
 
     const fetchVouchers = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/vouchers/admin/all');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/vouchers/admin/all');
         if (res.ok) vouchers.value = await res.json();
       } catch (e) { console.error("Lỗi tải voucher: ", e); }
     };
@@ -1866,8 +1866,8 @@ window.AdminViewModel = {
 
       try {
         const url = isEditingCustomer.value
-          ? `http://127.0.0.1:8000/api/admin/customers/${editingCustomerId.value}`
-          : 'http://127.0.0.1:8000/api/admin/customers/';
+          ? `${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/customers/${editingCustomerId.value}`
+          : (window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/customers/';
         
         const method = isEditingCustomer.value ? 'PUT' : 'POST';
         
@@ -1902,7 +1902,7 @@ window.AdminViewModel = {
           async () => {
             try {
               console.log(`[DEBUG] DELETE request for ID: ${id}`);
-              const res = await fetch(`http://127.0.0.1:8000/api/admin/customers/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/customers/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 console.log(`[DEBUG] DELETE success for ID: ${id}`);
                 fetchCustomers();
@@ -1913,7 +1913,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
-        fetch(`http://127.0.0.1:8000/api/admin/customers/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/customers/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) { fetchCustomers(); } })
           .catch(e => console.error("Lỗi khi xóa người dùng"));
       }
@@ -1946,7 +1946,7 @@ window.AdminViewModel = {
 
     const fetchResetRequests = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/support/reset-requests');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/reset-requests');
         if (res.ok) {
           resetRequests.value = await res.json();
         }
@@ -1964,7 +1964,7 @@ window.AdminViewModel = {
 
     const fetchBusinessRequests = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/business-requests');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/business-requests');
         if (res.ok) {
           businessRequests.value = await res.json();
         }
@@ -1976,7 +1976,7 @@ window.AdminViewModel = {
     const approveBusinessRequest = async (requestId) => {
       if (!confirm("Bạn có chắc chắn muốn phê duyệt yêu cầu này và nâng cấp tài khoản của khách hàng lên Doanh nghiệp?")) return;
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/admin/business-requests/${requestId}/approve`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/business-requests/${requestId}/approve`, {
           method: 'POST'
         });
         if (res.ok) {
@@ -1997,7 +1997,7 @@ window.AdminViewModel = {
     const rejectBusinessRequest = async (requestId) => {
       if (!confirm("Bạn có chắc chắn muốn từ chối yêu cầu đăng ký nâng cấp doanh nghiệp này?")) return;
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/admin/business-requests/${requestId}/reject`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/business-requests/${requestId}/reject`, {
           method: 'POST'
         });
         if (res.ok) {
@@ -2052,7 +2052,7 @@ window.AdminViewModel = {
 
     const fetchUnreadChatStates = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/support/admin/unread-states');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/admin/unread-states');
         if (res.ok) {
           unreadChatStates.value = await res.json();
         }
@@ -2073,7 +2073,7 @@ window.AdminViewModel = {
     const fetchAdminChatMessages = async (customerId) => {
       loadingAdminChat.value = true;
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/support/admin/tin-nhan-chat/${customerId}`);
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tin-nhan-chat/${customerId}`);
         if (res.ok) {
           allAdminChatMessages.value = await res.json();
           if (allAdminChatMessages.value.length > 10) {
@@ -2092,7 +2092,7 @@ window.AdminViewModel = {
 
     const fetchAdminChatMessagesBackground = async (customerId) => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/support/admin/tin-nhan-chat/${customerId}`);
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tin-nhan-chat/${customerId}`);
         if (res.ok) {
           const newMsgs = await res.json();
           if (newMsgs.length !== allAdminChatMessages.value.length) {
@@ -2137,7 +2137,7 @@ window.AdminViewModel = {
 
       adminChatInputText.value = '';
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/support/admin/tin-nhan-chat/${selectedChatCustomer.value.id}`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tin-nhan-chat/${selectedChatCustomer.value.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: textVal })
@@ -2178,7 +2178,7 @@ window.AdminViewModel = {
 
     const verifyCustomer = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/support/verify-customer', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/verify-customer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(verifyForm)
@@ -2204,7 +2204,7 @@ window.AdminViewModel = {
       if (!matchedUser.value) return;
       isResetting.value = true;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/support/reset-password', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2229,7 +2229,7 @@ window.AdminViewModel = {
       if (!matchedUser.value) return;
       isResetting.value = true;
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/support/reset-pin', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/reset-pin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2303,8 +2303,8 @@ window.AdminViewModel = {
       }
       try {
         const url = isEditingVoucher.value
-          ? `http://127.0.0.1:8000/vouchers/${editingVoucherId.value}`
-          : 'http://127.0.0.1:8000/vouchers/';
+          ? `${window.API_BASE || 'http://127.0.0.1:8000'}/vouchers/${editingVoucherId.value}`
+          : (window.API_BASE || 'http://127.0.0.1:8000') + '/vouchers/';
 
         const method = isEditingVoucher.value ? 'PUT' : 'POST';
 
@@ -2345,7 +2345,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/vouchers/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/vouchers/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 fetchVouchers();
                 if (window.showToast) window.showToast("Thành công", "Đã xóa voucher.", "success");
@@ -2357,7 +2357,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm("Bạn có chắc chắn muốn xóa voucher này?")) return;
-        fetch(`http://127.0.0.1:8000/vouchers/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/vouchers/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) { fetchVouchers(); } })
           .catch(e => console.error("Lỗi khi xóa voucher"));
       }
@@ -2365,7 +2365,7 @@ window.AdminViewModel = {
 
     const toggleVoucherStatus = async (id, newStatus) => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/vouchers/${id}/status`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/vouchers/${id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ trang_thai: newStatus })
@@ -2401,7 +2401,7 @@ window.AdminViewModel = {
 
     const fetchShippingUnits = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/shipping/admin/all');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/shipping/admin/all');
         if (res.ok) shippingUnits.value = await res.json();
       } catch (e) { console.error("Lỗi tải đơn vị vận chuyển: ", e); }
     };
@@ -2435,8 +2435,8 @@ window.AdminViewModel = {
       }
       try {
         const url = isEditingShipping.value
-          ? `http://127.0.0.1:8000/shipping/don-vi/${editingShippingId.value}`
-          : 'http://127.0.0.1:8000/shipping/don-vi';
+          ? `${window.API_BASE || 'http://127.0.0.1:8000'}/shipping/don-vi/${editingShippingId.value}`
+          : (window.API_BASE || 'http://127.0.0.1:8000') + '/shipping/don-vi';
         const method = isEditingShipping.value ? 'PUT' : 'POST';
         const res = await fetch(url, {
           method, headers: { 'Content-Type': 'application/json' },
@@ -2464,7 +2464,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/shipping/don-vi/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/shipping/don-vi/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 fetchShippingUnits();
                 if (window.showToast) window.showToast("Thành công", "Đã xóa đơn vị vận chuyển thành công.", "success");
@@ -2479,7 +2479,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm("Bạn có chắc muốn xóa đơn vị vận chuyển này?")) return;
-        fetch(`http://127.0.0.1:8000/shipping/don-vi/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/shipping/don-vi/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) { fetchShippingUnits(); if (window.showToast) window.showToast("Thành công", "Đã xóa.", "success"); } })
           .catch(e => console.error("Lỗi xóa đơn vị vận chuyển"));
       }
@@ -2487,7 +2487,7 @@ window.AdminViewModel = {
 
     const toggleShippingActive = async (unit) => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/shipping/don-vi/${unit.id}`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/shipping/don-vi/${unit.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kich_hoat: !unit.kich_hoat })
@@ -2510,7 +2510,7 @@ window.AdminViewModel = {
 
     const fetchPaymentPartners = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/payment/admin/all');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/payment/admin/all');
         if (res.ok) paymentPartners.value = await res.json();
       } catch (e) { console.error("Lỗi tải đối tác thanh toán: ", e); }
     };
@@ -2542,8 +2542,8 @@ window.AdminViewModel = {
       }
       try {
         const url = isEditingPayment.value
-          ? `http://127.0.0.1:8000/payment/doi-tac/${editingPaymentId.value}`
-          : 'http://127.0.0.1:8000/payment/doi-tac';
+          ? `${window.API_BASE || 'http://127.0.0.1:8000'}/payment/doi-tac/${editingPaymentId.value}`
+          : (window.API_BASE || 'http://127.0.0.1:8000') + '/payment/doi-tac';
         const method = isEditingPayment.value ? 'PUT' : 'POST';
         const res = await fetch(url, {
           method, headers: { 'Content-Type': 'application/json' },
@@ -2571,7 +2571,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/payment/doi-tac/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/payment/doi-tac/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 fetchPaymentPartners();
                 if (window.showToast) window.showToast("Thành công", "Đã xóa đối tác thanh toán thành công.", "success");
@@ -2586,7 +2586,7 @@ window.AdminViewModel = {
         );
       } else {
         if (!confirm("Bạn có chắc muốn xóa đối tác thanh toán này?")) return;
-        fetch(`http://127.0.0.1:8000/payment/doi-tac/${id}`, { method: 'DELETE' })
+        fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/payment/doi-tac/${id}`, { method: 'DELETE' })
           .then(res => { if (res.ok) { fetchPaymentPartners(); if (window.showToast) window.showToast("Thành công", "Đã xóa.", "success"); } })
           .catch(e => console.error("Lỗi xóa đối tác"));
       }
@@ -2594,7 +2594,7 @@ window.AdminViewModel = {
 
     const togglePaymentActive = async (partner) => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/payment/doi-tac/${partner.id}`, {
+        const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/payment/doi-tac/${partner.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kich_hoat: !partner.kich_hoat })
@@ -2605,7 +2605,7 @@ window.AdminViewModel = {
 
     const fetchEmployees = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/employees');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/employees');
         if (res.ok) {
           admins.value = await res.json();
         }
@@ -2636,7 +2636,7 @@ window.AdminViewModel = {
           async () => {
             let successCount = 0;
             for (const id of selectedVoucherIds.value) {
-              const res = await fetch(`http://127.0.0.1:8000/vouchers/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/vouchers/${id}`, { method: 'DELETE' });
               if (res.ok) successCount++;
             }
             if (window.showToast) window.showToast("Thành công", `Đã xóa ${successCount} voucher.`, "success");
@@ -2671,7 +2671,7 @@ window.AdminViewModel = {
           async () => {
             let count = 0;
             for (const id of selectedShippingIds.value) {
-              const res = await fetch(`http://127.0.0.1:8000/shipping/don-vi/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/shipping/don-vi/${id}`, { method: 'DELETE' });
               if (res.ok) count++;
             }
             if (window.showToast) window.showToast("Thành công", `Đã xóa ${count} đơn vị.`, "success");
@@ -2706,7 +2706,7 @@ window.AdminViewModel = {
           async () => {
             let count = 0;
             for (const id of selectedPaymentIds.value) {
-              const res = await fetch(`http://127.0.0.1:8000/payment/doi-tac/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/payment/doi-tac/${id}`, { method: 'DELETE' });
               if (res.ok) count++;
             }
             if (window.showToast) window.showToast("Thành công", `Đã xóa ${count} đối tác.`, "success");
@@ -2745,7 +2745,7 @@ window.AdminViewModel = {
             console.log(`[DEBUG] Starting bulk delete for ${selectedCustomerIds.value.length} users`);
             for (const id of selectedCustomerIds.value) {
               console.log(`[DEBUG] Deleting user ${id}...`);
-              const res = await fetch(`http://127.0.0.1:8000/api/admin/customers/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/customers/${id}`, { method: 'DELETE' });
               if (res.ok) count++;
             }
             console.log(`[DEBUG] Finished bulk delete. Success: ${count}`);
@@ -2771,7 +2771,7 @@ window.AdminViewModel = {
           `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.5"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>`,
           async () => {
             try {
-              const res = await fetch(`http://127.0.0.1:8000/api/admin/employees/${id}`, { method: 'DELETE' });
+              const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/employees/${id}`, { method: 'DELETE' });
               if (res.ok) {
                 const data = await res.json();
                 admins.value = data.employees;
@@ -2827,7 +2827,7 @@ window.AdminViewModel = {
         return;
       }
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/employees', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/employees', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(employeeForm)
@@ -2884,7 +2884,7 @@ window.AdminViewModel = {
 
     const fetchSchedules = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/admin/schedules');
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/schedules');
         if (res.ok) {
           schedules.value = await res.json();
         }
@@ -2930,7 +2930,7 @@ window.AdminViewModel = {
           shift: rosterForm.shift,
           notes: rosterForm.notes
         };
-        const res = await fetch('http://127.0.0.1:8000/api/admin/schedules', {
+        const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/schedules', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -2949,7 +2949,7 @@ window.AdminViewModel = {
     const deleteRoster = async (schId) => {
       if (confirm("Bạn có chắc chắn muốn xóa lịch phân ca này không?")) {
         try {
-          const res = await fetch(`http://127.0.0.1:8000/api/admin/schedules/${schId}`, { method: 'DELETE' });
+          const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/admin/schedules/${schId}`, { method: 'DELETE' });
           if (res.ok) {
             const data = await res.json();
             schedules.value = data.schedules;
@@ -3214,7 +3214,7 @@ window.AdminViewModel = {
       const action = async () => {
         const token = localStorage.getItem('access_token') || localStorage.getItem('token');
         const promises = pending.map(order => 
-          fetch(`http://127.0.0.1:8000/don-hang/cap-nhat-trang-thai/${order.id}`, {
+          fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/don-hang/cap-nhat-trang-thai/${order.id}`, {
             method: 'PUT',
             headers: { 
               'Content-Type': 'application/json',
@@ -3253,8 +3253,8 @@ window.AdminViewModel = {
       const action = async () => {
         try {
           const [res1, res2] = await Promise.all([
-            fetch('http://127.0.0.1:8000/api/support/reset-requests/resolve-all', { method: 'POST' }),
-            fetch('http://127.0.0.1:8000/api/admin/business-requests/approve-all', { method: 'POST' })
+            fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/support/reset-requests/resolve-all', { method: 'POST' }),
+            fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/business-requests/approve-all', { method: 'POST' })
           ]);
           if (res1.ok && res2.ok) {
             if (window.showToast) window.showToast("Thành công", "Đã xử lý và phê duyệt toàn bộ các yêu cầu thành công!", "success");
@@ -3288,7 +3288,7 @@ window.AdminViewModel = {
       
       const action = async () => {
         const promises = pending.map(ticket => 
-          fetch(`http://127.0.0.1:8000/api/support/admin/tickets/${ticket.id}/status`, {
+          fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tickets/${ticket.id}/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'da_xu_ly' })
