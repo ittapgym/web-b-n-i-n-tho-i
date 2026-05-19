@@ -876,13 +876,7 @@ window.AdminViewModel = {
 
       analyticsData.value.topProducts = sortedProducts.slice(0, 5);
 
-      if (analyticsData.value.topProducts.length === 0) {
-        analyticsData.value.topProducts = [
-          { name: 'iPhone 15 Pro Max', sales: 0 },
-          { name: 'MacBook Pro M3', sales: 0 },
-          { name: 'AirPods Pro 2', sales: 0 }
-        ];
-      }
+
 
       if (revenueViewMode.value === 'day') {
         const dailyBuckets = [0, 0, 0, 0, 0, 0, 0];
@@ -913,9 +907,7 @@ window.AdminViewModel = {
         analyticsData.value.revenueChart = dailyBuckets.map(val => Number((val / 1000000).toFixed(1)));
         analyticsData.value.revenueChartLabels = dailyLabels;
         
-        if (analyticsData.value.revenueChart.every(v => v === 0)) {
-          analyticsData.value.revenueChart = [4.2, 5.8, 3.1, 7.5, 9.2, 6.4, 8.5];
-        }
+
       } else {
         const weeklyBuckets = [0, 0, 0, 0, 0];
         const weeklyLabels = ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4", "Tuần 5"];
@@ -940,9 +932,7 @@ window.AdminViewModel = {
         analyticsData.value.revenueChart = weeklyBuckets.map(val => Number((val / 1000000).toFixed(1)));
         analyticsData.value.revenueChartLabels = weeklyLabels;
 
-        if (analyticsData.value.revenueChart.every(v => v === 0)) {
-          analyticsData.value.revenueChart = [45, 52, 48, 65, 72];
-        }
+
       }
     };
 

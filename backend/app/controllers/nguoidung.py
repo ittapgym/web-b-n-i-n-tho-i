@@ -28,8 +28,8 @@ def _build_image_url(hinh_anh_raw) -> str:
     ha_normalized = ha.replace('\\', '/')
     filename = ha_normalized.split('/')[-1]
     if "user_" in ha:
-        return f"http://127.0.0.1:8000/static/uploads/avatars/{filename}"
-    return f"http://127.0.0.1:8000/static/uploads/{filename}"
+        return f"/static/uploads/avatars/{filename}"
+    return f"/static/uploads/{filename}"
 
 @router.get("/api/admin/customers", response_model=List[dict])
 @router.get("/api/admin/customers/", response_model=List[dict])

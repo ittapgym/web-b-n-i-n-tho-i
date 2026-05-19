@@ -84,7 +84,7 @@ async def upload_file(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        image_url = f"http://127.0.0.1:8000/static/uploads/{unique_filename}"
+        image_url = f"/static/uploads/{unique_filename}"
         return {"url": image_url}
     except HTTPException as he:
         raise he
