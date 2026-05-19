@@ -2,15 +2,15 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 class SanPhamBase(BaseModel):
-    ten: str
-    mau_sac: str
+    ten: Optional[str] = None
+    mau_sac: Optional[str] = None
     dung_luong: Optional[str] = ""
     ram: Optional[str] = ""
-    mo_ta: str
-    gia: float
+    mo_ta: Optional[str] = None
+    gia: Optional[float] = None
     hinh_anh: Optional[str] = None
     thu_vien_anh: Optional[List[str]] = []
-    danh_muc: str
+    danh_muc: Optional[str] = None
     is_new: Optional[int] = 1
     so_luong_kho: Optional[int] = 100
 

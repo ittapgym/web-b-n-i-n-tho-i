@@ -23,6 +23,7 @@ from .controllers import (
 # Kết nối Database và Migration
 try:
     print(">>> Đang kết nối Database PostgreSQL...")
+    Base.metadata.create_all(bind=engine)
     # Thử kết nối nhanh để kiểm tra trước khi migration
     with engine.connect() as conn:
         print(">>> Kết nối thành công. Đang kiểm tra Migration...")
@@ -30,11 +31,14 @@ try:
         from sqlalchemy import text
 
         # ... (giữ nguyên các lệnh execute text)
-        conn.execute(
-            text(
-                "ALTER TABLE san_pham ADD COLUMN IF NOT EXISTS dung_luong VARCHAR(255) DEFAULT ''"
+        try:
+            conn.execute(
+                text(
+                    "ALTER TABLE san_pham ADD COLUMN IF NOT EXISTS dung_luong VARCHAR(255) DEFAULT ''"
+                )
             )
-        )
+        except Exception as e:
+            print(f">>> Migration warning (dung_luong): {e}")
         conn.execute(
             text(
                 "ALTER TABLE san_pham ADD COLUMN IF NOT EXISTS ram VARCHAR(255) DEFAULT ''"
@@ -389,7 +393,6 @@ try:
         )
         conn.commit()
 
-    Base.metadata.create_all(bind=engine)
     print(">>> Database & Migration: OK.")
 except Exception as e:
     print(f"\n[!] LOI KET NOI DATABASE: {e}")
@@ -410,18 +413,11 @@ async def debug_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Cấu hình CORS - Chỉ định rõ origin để tránh lỗi CORS
-origins = [
-    "https://peach-store.onrender.com",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-]
-
+# Cấu hình CORS - Cho phép tất cả origin để tránh lỗi CORS khi deploy
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
