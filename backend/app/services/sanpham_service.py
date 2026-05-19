@@ -24,7 +24,7 @@ class SanPhamService:
         
         # Ghi nhật ký Admin
         from app.services.admin_activity_service import AdminActivityService
-        AdminActivityService.ghi_log(db, f"Đã thêm sản phẩm mới: {db_product.ten_san_pham}", "Admin")
+        AdminActivityService.ghi_log(db, f"Đã thêm sản phẩm mới: {db_product.ten}", "Admin")
         
         return db_product
 
@@ -43,7 +43,7 @@ class SanPhamService:
         
         # Ghi nhật ký Admin
         from app.services.admin_activity_service import AdminActivityService
-        AdminActivityService.ghi_log(db, f"Đã cập nhật thông tin sản phẩm: {db_product.ten_san_pham}", "Admin")
+        AdminActivityService.ghi_log(db, f"Đã cập nhật thông tin sản phẩm: {db_product.ten}", "Admin")
         
         return db_product
 
@@ -53,7 +53,7 @@ class SanPhamService:
         if not db_product:
             return False
             
-        product_name = db_product.ten_san_pham
+        product_name = db_product.ten
         db.delete(db_product)
         db.commit()
         

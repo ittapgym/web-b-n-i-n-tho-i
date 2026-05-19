@@ -4,12 +4,31 @@
   "description": "Standalone Admin Dashboard for PeachStore",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder build --win",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.peachstore.admin",
+    "productName": "Peach Admin",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "**/*"
+    ]
   },
   "keywords": [],
-  "author": "MangoStore",
+  "author": "PeachStore",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^30.0.0"
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
   }
 }

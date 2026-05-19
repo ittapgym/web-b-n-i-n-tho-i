@@ -15,6 +15,22 @@ class CustomerUpdate(BaseModel):
     vai_tro: Optional[str] = None
     trang_thai: Optional[str] = None
 
+def _build_image_url(hinh_anh_raw) -> str:
+    """Helper to build image URL without f-string backslash issues."""
+    if not hinh_anh_raw:
+        return None
+    ha = str(hinh_anh_raw)
+    if not ha.strip():
+        return None
+    if ha.startswith('http'):
+        return ha
+    # Normalize backslashes to forward slashes
+    ha_normalized = ha.replace('\\', '/')
+    filename = ha_normalized.split('/')[-1]
+    if "user_" in ha:
+        return f"http://127.0.0.1:8000/static/uploads/avatars/{filename}"
+    return f"http://127.0.0.1:8000/static/uploads/{filename}"
+
 @router.get("/api/admin/customers", response_model=List[dict])
 @router.get("/api/admin/customers/", response_model=List[dict])
 def get_customers(db: Session = Depends(get_db)):
@@ -29,11 +45,7 @@ def get_customers(db: Session = Depends(get_db)):
             "vai_tro": c.vai_tro,
             "trang_thai": getattr(c, 'trang_thai', 'dang_hoat_dong'),
             "diem_tich_luy": getattr(c, 'diem_tich_luy', 0),
-            "hinh_anh": (f"http://127.0.0.1:8000/static/uploads/avatars/{str(c.hinh_anh).replace('\\\\', '/').split('/')[-1]}" 
-                         if getattr(c, 'hinh_anh', None) and "user_" in str(c.hinh_anh)
-                         else f"http://127.0.0.1:8000/static/uploads/{str(c.hinh_anh).replace('\\\\', '/').split('/')[-1]}"
-                         if getattr(c, 'hinh_anh', None) and len(str(c.hinh_anh).strip()) > 0 and not str(c.hinh_anh).startswith('http') 
-                         else getattr(c, 'hinh_anh', None))
+            "hinh_anh": _build_image_url(getattr(c, 'hinh_anh', None))
         } for c in customers
     ]
 

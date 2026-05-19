@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.services.donhang_service import DonHangService
 from app.schemas.donhang import DonHangCreate, DonHangSchema, DonHangUpdateStatus
 from app.core.phu_thuoc import lay_nguoi_dung_hien_tai
 from app.models.nguoidung import NguoiDung
+
+
+class XoaNhieuOrderRequest(BaseModel):
+    ids: List[int]
 
 router = APIRouter(prefix="/don-hang", tags=["Đơn hàng"])
 
@@ -64,9 +69,9 @@ async def admin_xoa_don_hang(order_id: int, db: Session = Depends(get_db)):
     return await DonHangService.admin_delete_order(db, order_id)
 
 @router.post("/admin/xoa-nhieu")
-async def admin_xoa_nhieu_don_hang(order_ids: List[int], db: Session = Depends(get_db)):
+async def admin_xoa_nhieu_don_hang(request: XoaNhieuOrderRequest, db: Session = Depends(get_db)):
     """Admin xóa nhiều đơn hàng vĩnh viễn"""
-    return await DonHangService.admin_bulk_delete_orders(db, order_ids)
+    return await DonHangService.admin_bulk_delete_orders(db, request.ids)
 
 @router.get("/tra-cuu-bao-hanh/{imei}")
 async def tra_cuu_bao_hanh(imei: str, db: Session = Depends(get_db)):
