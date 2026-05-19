@@ -1,0 +1,167 @@
+<div v-if="activeTab === 'products'" class="view-pane products-view">
+   <div class="pane-header mango-flex-between">
+      <h1>Kho & Sản phẩm</h1>
+      <div class="flex-gap-12 flex-center-h">
+         <button v-if="selectedProductIds.length > 0" class="action-btn danger" @click="deleteSelectedProducts"
+            style="background: #FF3B30 !important; color: white !important; border: none !important; border-radius: 12px !important;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+               style="margin-right: 6px;">
+               <polyline points="3 6 5 6 21 6"></polyline>
+               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Xóa {{ selectedProductIds.length }} sản phẩm đã chọn
+         </button>
+         <div class="search-box relative">
+            <svg class="icon-search" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2">
+               <circle cx="11" cy="11" r="8"></circle>
+               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" v-model="filterQuery" placeholder="Tìm tên sản phẩm..."
+               class="mango-input padding-l-36 width-250">
+         </div>
+         <button class="action-btn icon-btn primary" title="Thêm sản phẩm" @click="openAddProductModal">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+               <line x1="12" y1="5" x2="12" y2="19"></line>
+               <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+         </button>
+      </div>
+   </div>
+
+
+   <div class="category-filter-bar" style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+      <button class="filter-chip" :class="{ active: selectedCategory === '' }" @click="selectedCategory = ''"
+         style="padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--border-light); background: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;">
+         Tất cả
+      </button>
+      <button class="filter-chip" :class="{ active: selectedCategory === 'iphone' }"
+         @click="selectedCategory = 'iphone'"
+         style="padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--border-light); background: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+         </svg>
+         iPhone
+      </button>
+      <button class="filter-chip" :class="{ active: selectedCategory === 'ipad' }" @click="selectedCategory = 'ipad'"
+         style="padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--border-light); background: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+         </svg>
+         iPad
+      </button>
+      <button class="filter-chip" :class="{ active: selectedCategory === 'macbook' }"
+         @click="selectedCategory = 'macbook'"
+         style="padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--border-light); background: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+         </svg>
+         Mac
+      </button>
+      <button class="filter-chip" :class="{ active: selectedCategory === 'phu-kien' }"
+         @click="selectedCategory = 'phu-kien'"
+         style="padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--border-light); background: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+            <path
+               d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z">
+            </path>
+         </svg>
+         Phụ kiện
+      </button>
+   </div>
+
+   <div class="table-wrapper mango-card">
+      <table class="xcode-table">
+         <thead>
+            <tr>
+               <th style="width: 40px; padding-left: 20px;">
+                  <input type="checkbox" @change="toggleSelectAllProducts(filteredProducts)"
+                     :checked="selectedProductIds.length === filteredProducts.length && filteredProducts.length > 0"
+                     style="cursor: pointer; width: 16px; height: 16px;">
+               </th>
+               <th colspan="2" @click="sortProducts('id')" class="pointer" style="width: 30%;">SẢN PHẨM <span
+                     v-if="productSortKey === 'id'">{{ productSortOrder === 'asc' ? '↑' : '↓' }}</span></th>
+               <th style="width: 12%;">CẤU HÌNH</th>
+               <th style="width: 100px;">MÀU SẮC</th>
+               <th style="width: 15%;">GIÁ NIÊM YẾT</th>
+               <th style="width: 12%;">TỒN KHO</th>
+               <th style="width: 18%;">MÔ TẢ</th>
+               <th style="width: 100px;">THAO TÁC</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr v-for="p in filteredProducts" :key="p.id"
+               :class="{ 'row-selected': selectedProductIds.includes(p.id) }">
+               <td style="padding-left: 20px;">
+                  <input type="checkbox" :value="p.id" v-model="selectedProductIds"
+                     style="cursor: pointer; width: 16px; height: 16px;">
+               </td>
+               <td style="width: 48px;"><img :src="p.hinh_anh || 'https://via.placeholder.com/48'"
+                     class="product-thumb"></td>
+               <td>
+                  <div class="bold small">{{ p.ten }}</div>
+                  <div class="dim x-small">ID: #PEACH-{{ p.id }}</div>
+               </td>
+               <td class="small">
+                  <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center;">
+                     <span v-for="spec in getProductSpecsList(p)" :key="spec" 
+                        style="background: rgba(0, 122, 255, 0.08); color: var(--accent); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap;">
+                        {{ spec }}
+                     </span>
+                     <span v-if="getProductSpecsList(p).length === 0" class="dim">—</span>
+                  </div>
+               </td>
+               <td>
+                  <div class="color-dots-mini" v-if="p.mau_sac">
+                     <span v-for="c in (p.mau_sac || '').split(',')" :key="c" :style="{backgroundColor: c}"
+                        class="mini-dot"></span>
+                  </div>
+                  <span v-else class="dim x-small">—</span>
+               </td>
+               <td class="bold">{{ formatPrice(p.gia) }}</td>
+               <td>
+                  <span :style="{
+                     backgroundColor: p.so_luong_kho > 10 ? 'rgba(52, 199, 89, 0.08)' :
+                                      p.so_luong_kho > 0 ? 'rgba(255, 149, 0, 0.08)' : 'rgba(255, 59, 48, 0.08)',
+                     color: p.so_luong_kho > 10 ? '#34C759' :
+                            p.so_luong_kho > 0 ? '#FF9500' : '#FF3B30'
+                  }" style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block;">
+                     {{ p.so_luong_kho > 0 ? p.so_luong_kho + ' máy' : 'Hết hàng' }}
+                  </span>
+               </td>
+               <td class="dim x-small cell-truncate" style="max-width: 200px;" :title="cleanDescription(p.mo_ta)">{{ cleanDescription(p.mo_ta) }}</td>
+               <td>
+                  <div class="flex-center gap-8">
+                     <button class="action-btn-mini" @click="openEditProductModal(p)"><svg width="14" height="14"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path>
+                        </svg></button>
+                     <button class="action-btn-mini danger" @click="deleteProduct(p.id)"><svg width="14" height="14"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <polyline points="3 6 5 6 21 6"></polyline>
+                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                           </path>
+                        </svg></button>
+                  </div>
+               </td>
+            </tr>
+            <tr v-if="filteredProducts.length === 0">
+               <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
+                  <div style="font-size: 14px; font-weight: 600;">Không có sản phẩm nào</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Thêm sản phẩm mới hoặc thay đổi bộ lọc.</div>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+   </div>
+   <div style="padding: 12px 4px; margin-top: 8px;">
+      <span style="font-size: 12px; color: #86868b; font-weight: 500;">Hiển thị {{ filteredProducts.length }} / {{
+         products.length }} sản phẩm</span>
+   </div>
+</div>

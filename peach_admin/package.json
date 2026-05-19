@@ -1,0 +1,15 @@
+{
+  "name": "peach-admin",
+  "version": "1.0.0",
+  "description": "Standalone Admin Dashboard for PeachStore",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "MangoStore",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}

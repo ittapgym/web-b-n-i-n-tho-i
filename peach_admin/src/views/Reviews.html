@@ -1,0 +1,49 @@
+<div v-if="activeTab === 'reviews'" class="view-pane reviews-view">
+  <div class="pane-header mango-flex-between">
+    <h1>Đánh giá & Bình luận</h1>
+    <div class="search-box relative">
+      <input type="text" placeholder="Tìm theo tên khách, sản phẩm..." class="mango-input padding-l-36 width-250">
+      <svg class="icon-search" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+  </div>
+
+  <div class="table-wrapper mango-card">
+    <table class="xcode-table">
+      <thead>
+        <tr>
+          <th>KHÁCH HÀNG</th>
+          <th>SẢN PHẨM</th>
+          <th>ĐÁNH GIÁ</th>
+          <th>NỘI DUNG</th>
+          <th class="text-center">THAO TÁC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="r in reviews" :key="r.id">
+          <td class="bold">{{ r.user }}</td>
+          <td class="small">{{ r.product }}</td>
+          <td class="rating-stars">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5-r.rating) }}</td>
+          <td class="small dim italic">"{{ r.comment }}"</td>
+          <td class="text-center">
+            <div class="flex-center gap-8">
+              <button class="action-btn-mini info" title="Duyệt"><svg width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg></button>
+              <button class="action-btn-mini danger" title="Ẩn/Xóa"><svg width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                  </path>
+                </svg></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

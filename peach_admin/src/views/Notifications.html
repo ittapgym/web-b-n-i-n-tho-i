@@ -1,0 +1,88 @@
+<div v-if="activeTab === 'notifications'" class="view-pane push-view">
+  <div class="pane-header mango-flex-between">
+    <h1>Gửi thông báo (Push)</h1>
+    <button class="action-btn primary" @click="sendPush">Gửi ngay bây giờ</button>
+  </div>
+
+  <div class="mango-split push-split">
+    <div class="mango-card padding-32">
+      <div class="form-group">
+        <label>Tiêu đề chiến dịch</label>
+        <input type="text" v-model="pushTitle" placeholder="Ví dụ: Ưu đãi đặc biệt hôm nay..." class="mango-input">
+      </div>
+      <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="margin-bottom: 0;">Nội dung thông báo</label>
+          <span style="font-size: 12px; font-weight: 600; color: #86868b;">{{ pushBody ? pushBody.length : 0 }}/3000 ký tự</span>
+        </div>
+        <textarea v-model="pushBody" placeholder="Nhập nội dung bạn muốn gửi tới khách hàng..."
+          class="mango-textarea" maxlength="3000"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Gửi tới nhóm</label>
+        <select v-model="pushTarget" class="mango-select">
+          <option>Tất cả khách hàng</option>
+          <option>Hạng Silver trở lên</option>
+          <option>Khách chưa mua hàng trong 30 ngày</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mango-card flex-center column" style="background: #f5f5f7; border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); min-height: 320px;">
+      <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; text-align: center; width: 100%;">
+        Xem trước trên giao diện người dùng
+      </div>
+      
+      <!-- Realistic Client Web App Notification Card Mockup -->
+      <div style="background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 18px; display: flex; gap: 14px; width: 100%; max-width: 380px; box-shadow: 0 8px 24px rgba(0,0,0,0.03); transition: all 0.3s ease;">
+         <div style="width: 40px; height: 40px; background: rgba(0, 122, 255, 0.08); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+         </div>
+         <div style="flex: 1; display: flex; flex-direction: column; gap: 5px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+               <h4 style="font-size: 14px; font-weight: 700; color: #1d1d1f; margin: 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">
+                 {{ pushTitle || 'Tiêu đề thông báo...' }}
+               </h4>
+               <span style="font-size: 11px; color: #86868b; white-space: nowrap; font-weight: 500;">Vừa xong</span>
+            </div>
+            <p style="font-size: 12.5px; color: #48484a; margin: 0; line-height: 1.4; word-break: break-word;">
+              {{ pushBody || 'Nội dung thông báo sẽ xuất hiện ở đây...' }}
+            </p>
+            
+            <div style="display: flex; gap: 6px; margin-top: 3px;">
+               <span style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 5px; background: #f5f5f7; color: #86868b;">
+                  Nhóm: {{ pushTarget }}
+               </span>
+            </div>
+         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="margin-top-40">
+    <div class="section-title">CHIẾN DỊCH ĐÃ GỬI</div>
+    <div class="table-wrapper mango-card">
+      <table class="xcode-table">
+        <thead>
+          <tr>
+            <th>TIÊU ĐỀ</th>
+            <th>ĐỐI TƯỢNG</th>
+            <th>NGÀY GỬI</th>
+            <th>TỈ LỆ MỞ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="camp in pushCampaigns" :key="camp.title">
+            <td class="bold">{{ camp.title }}</td>
+            <td>{{ camp.target }}</td>
+            <td class="dim">{{ camp.sent }}</td>
+            <td class="bold success">{{ camp.openRate }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

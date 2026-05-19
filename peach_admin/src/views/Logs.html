@@ -1,0 +1,172 @@
+<div v-if="activeTab === 'logs'" class="view-pane logs-view" style="padding: 0 !important; display: flex !important; flex-direction: column; height: calc(100vh - 110px); overflow: hidden; background: #f5f5f7; border-radius: 20px; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+  
+  <style>
+  /* Custom Scrollbar for Audit Logs Table */
+  .audit-table-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .audit-table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .audit-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+  }
+  .audit-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.16);
+  }
+
+  /* Xcode table row hover transition */
+  .audit-log-row {
+    transition: all 0.2s ease;
+  }
+  .audit-log-row:hover {
+    background-color: rgba(0, 122, 255, 0.02) !important;
+  }
+
+  /* Premium Role Badges */
+  .badge-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-admin {
+    background: rgba(88, 86, 214, 0.08);
+    color: #5856d6;
+    border: 1px solid rgba(88, 86, 214, 0.12);
+  }
+  .badge-sales {
+    background: rgba(255, 45, 85, 0.08);
+    color: #ff2d55;
+    border: 1px solid rgba(255, 45, 85, 0.12);
+  }
+  .badge-warehouse {
+    background: rgba(255, 149, 0, 0.08);
+    color: #ff9500;
+    border: 1px solid rgba(255, 149, 0, 0.12);
+  }
+  .badge-customer {
+    background: rgba(0, 122, 255, 0.06);
+    color: #007aff;
+    border: 1px solid rgba(0, 122, 255, 0.1);
+  }
+  </style>
+
+  <!-- Pane Header -->
+  <div class="pane-header mango-flex-between" style="padding: 20px 24px; background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.06); flex-shrink: 0; margin-bottom: 0;">
+    <div style="display: flex; align-items: center; gap: 10px; height: 100%;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" style="display: block;">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <h1 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 !important; line-height: 1 !important; display: inline-flex; align-items: center;">Nhật ký Audit hệ thống</h1>
+      <button v-if="auditPendingCount > 0" @click="markAllAuditAsProcessed"
+        style="background: rgba(52, 199, 89, 0.08) !important; color: #34C759 !important; border: 1.5px solid #34C759 !important; border-radius: 8px; font-weight: 700; font-size: 11px; padding: 4px 8px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: all 0.2s; outline: none; margin-left: 8px; align-self: center;"
+        title="Đánh dấu đã xem hết tất cả các nhật ký mới">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: block;">
+           <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span style="line-height: 1;">Xong tất cả ({{ auditPendingCount }})</span>
+      </button>
+    </div>
+    <div class="search-box relative" style="width: 320px;">
+      <input 
+        type="text" 
+        v-model="searchAuditQuery"
+        placeholder="Lọc theo tài khoản, hành động, IP..." 
+        class="mango-input"
+        style="padding-left: 36px; height: 36px; font-size: 13px; border-radius: 8px; width: 100%; border: 1.5px solid rgba(0,0,0,0.05); outline: none;"
+      >
+      <svg class="icon-search" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="left: 12px; top: 50%; transform: translateY(-50%);">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Main Scrollable Table Wrapper -->
+  <div class="audit-table-wrapper" style="flex: 1; overflow-y: auto; background: #ffffff; min-height: 0;">
+    
+    <!-- Empty Search Results -->
+    <div v-if="filteredAuditLogs.length === 0" style="padding: 60px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(0,122,255,0.4)" stroke-width="1.5">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        <line x1="8" y1="11" x2="14" y2="11"></line>
+      </svg>
+      <div>
+        <h3 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin: 0 0 4px 0;">Không tìm thấy nhật ký</h3>
+        <p style="font-size: 12.5px; color: #86868b; margin: 0;">Vui lòng thử lại với từ khóa khác.</p>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <table v-else class="xcode-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+      <thead>
+        <tr style="background: #f5f5f7; border-bottom: 1px solid rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 10;">
+          <th style="width: 80px; padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;">ID</th>
+          <th style="width: 250px; padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;">Tài Khoản & Người Dùng</th>
+          <th style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;">Hành Động Hệ Thống</th>
+          <th style="width: 150px; padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Thời Gian</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="l in filteredAuditLogs" :key="l.id" class="audit-log-row" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+          <!-- ID -->
+          <td style="padding: 14px 20px; font-size: 13px; font-family: monospace; color: #86868b;">
+            #{{ l.id }}
+          </td>
+          
+          <!-- User / Account Badge -->
+          <td style="padding: 14px 20px; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-weight: 700; color: #1d1d1f;">{{ l.user }}</span>
+              <div style="display: flex;">
+                <span v-if="l.user === 'admin@peachstore.com'" class="badge-role badge-admin">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  System Admin
+                </span>
+                <span v-else-if="l.user === 'sale_manager@peachstore.com'" class="badge-role badge-sales">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                  Sales Manager
+                </span>
+                <span v-else-if="l.user === 'inventory_clerk@peachstore.com'" class="badge-role badge-warehouse">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                  Warehouse
+                </span>
+                <span v-else class="badge-role badge-customer">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  Customer
+                </span>
+              </div>
+            </div>
+          </td>
+          
+          <!-- Action & IP -->
+          <td style="padding: 14px 20px; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="color: #1d1d1f; font-weight: 500; line-height: 1.4;">{{ l.action }}</span>
+              <span style="font-size: 11px; color: #86868b; display: flex; align-items: center; gap: 4px;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="22" y2="7"></line><line x1="2" y1="17" x2="22" y2="17"></line></svg>
+                IP: {{ l.ip_address }}
+              </span>
+            </div>
+          </td>
+          
+          <!-- Timestamp -->
+          <td style="padding: 14px 20px; font-size: 12px; color: #86868b; text-align: right; font-family: monospace;">
+            {{ l.time }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

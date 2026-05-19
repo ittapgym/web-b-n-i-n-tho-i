@@ -1,0 +1,48 @@
+[v-cloak] { visibility: hidden !important; }
+
+@keyframes fadeInFast {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+body {
+  animation: fadeInFast 0.2s ease-out forwards;
+  background: var(--white);
+  font-family: var(--font);
+  color: var(--black);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --white: #FFFFFF;
+  --off-white: #F7F7F7;
+  --light: #EEEEEE;
+  --mid: #BBBBBB;
+  --dark: #555555;
+  --black: #111111;
+  --mango: #FF9900;
+  --mango-dk: #E68800;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --r: 10px;
+  --r-sm: 6px;
+  --r-pill: 100px;
+  --sh-sm: 0 1px 4px rgba(0, 0, 0, .06);
+  --sh: 0 2px 12px rgba(0, 0, 0, .08);
+  --sh-hover: 0 6px 24px rgba(0, 0, 0, .12);
+  --t: .2s cubic-bezier(.4, 0, .2, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #fcfcfe;
+}

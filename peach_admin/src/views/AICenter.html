@@ -1,0 +1,410 @@
+<div v-if="activeTab === 'ai'" class="view-pane ai-center-view" style="display: flex; flex-direction: column; gap: 24px;">
+  
+  <style>
+    /* Premium UI transitions and styling */
+    .ai-stat-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100px;
+      box-sizing: border-box;
+    }
+    .ai-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      border-color: rgba(0, 122, 255, 0.15);
+    }
+    
+    .ai-table-row {
+      transition: all 0.2s ease;
+    }
+    .ai-table-row:hover {
+      background-color: rgba(0, 122, 255, 0.02) !important;
+    }
+
+    .btn-icon-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+    .btn-icon-label.danger {
+      background: rgba(255, 59, 48, 0.08);
+      color: #ff3b30;
+      border: 1px solid rgba(255, 59, 48, 0.15);
+    }
+    .btn-icon-label.danger:hover {
+      background: #ff3b30;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+    }
+    .btn-icon-label.secondary {
+      background: rgba(0, 122, 255, 0.08);
+      color: #007aff;
+      border: 1px solid rgba(0, 122, 255, 0.15);
+    }
+    .btn-icon-label.secondary:hover {
+      background: #007aff;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 280px;
+      max-width: 450px;
+    }
+    .search-input-wrapper input {
+      box-sizing: border-box;
+      width: 100%;
+      height: 40px;
+      padding: 0 16px 0 40px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(0,0,0,0.06);
+      background: #ffffff;
+      font-size: 13.5px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-input-wrapper input:focus {
+      border-color: #007aff;
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+    }
+    .search-input-wrapper svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #86868b;
+    }
+
+    /* Pulse animation */
+    .status-pulse {
+      width: 10px;
+      height: 10px;
+      background-color: #34c759;
+      border-radius: 50%;
+      display: inline-block;
+      position: relative;
+    }
+    .status-pulse::after {
+      content: '';
+      width: 100%;
+      height: 100%;
+      background-color: #34c759;
+      border-radius: 50%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      animation: status-ping 1.5s infinite ease-in-out;
+    }
+    @keyframes status-ping {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* Text bubble styling for AI chat */
+    .bubble-card {
+      background: #f5f5f7;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #1d1d1f;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+    .bubble-card.question {
+      background: rgba(0, 122, 255, 0.05);
+      border-color: rgba(0, 122, 255, 0.08);
+      font-weight: 500;
+    }
+
+    .badge-user {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      max-width: 100%;
+    }
+    .badge-user.registered {
+      background: rgba(52, 199, 89, 0.08);
+      color: #248a3d;
+      border: 1px solid rgba(52, 199, 89, 0.15);
+    }
+    .badge-user.guest {
+      background: rgba(142, 142, 147, 0.08);
+      color: #636366;
+      border: 1px solid rgba(142, 142, 147, 0.15);
+    }
+  </style>
+
+  <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+  <!-- Pane Header -->
+  <div class="pane-header mango-flex-between" style="margin-bottom: 0; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #007aff, #0056b3); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      </div>
+      <div>
+        <h1 style="font-size: 22px; font-weight: 800; color: #1d1d1f; margin: 0; line-height: 1.2;">Lịch sử Chat của Admin</h1>
+        <span style="font-size: 12.5px; color: #86868b;">Quản lý toàn bộ câu hỏi và phản hồi từ Trợ lý ảo của Admin</span>
+      </div>
+    </div>
+
+    <!-- Cấu hình AI Model Button -->
+    <button @click="showAiConfigModal = true" class="btn-icon-label secondary" style="padding: 10px 18px; font-size: 13px; border-radius: 12px; background: #007aff; color: #ffffff; border: none; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      Cấu hình AI Model
+    </button>
+  </div>
+
+  <!-- Key Metrics Row -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+    <!-- Stat 1: Online Status -->
+    <div class="ai-stat-card">
+      <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;">Trạng thái hệ thống</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="status-pulse" :style="{ backgroundColor: aiConfigForm.isActive ? '#34c759' : '#ff3b30' }"></span>
+          <span style="font-size: 18px; font-weight: 700; color: #1d1d1f;">{{ aiConfigForm.isActive ? 'Đang Hoạt Động' : 'Đang Tắt' }}</span>
+        </div>
+        <span style="font-size: 10.5px; padding: 3px 8px; border-radius: 6px; font-weight: 700;" :style="{ background: aiConfigForm.isActive ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)', color: aiConfigForm.isActive ? '#34c759' : '#ff3b30' }">
+          {{ aiConfigForm.isActive ? 'Trực tuyến' : 'Ngoại tuyến' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Stat 2: Total Conversations -->
+    <div class="ai-stat-card">
+      <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;">Tổng số cuộc hội thoại</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
+        <span style="font-size: 24px; font-weight: 700; color: #1d1d1f;">{{ aiLogs.length }}</span>
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(0, 122, 255, 0.08); display: flex; align-items: center; justify-content: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat 3: Model In Use -->
+    <div class="ai-stat-card">
+      <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;">AI Model đang dùng</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
+        <span style="font-size: 16px; font-weight: 700; color: #1d1d1f; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;" :title="aiConfigForm.model">{{ aiConfigForm.model }}</span>
+        <span style="font-size: 10.5px; background: rgba(0, 122, 255, 0.1); color: #007aff; padding: 3px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">{{ aiConfigForm.provider }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Actions Toolbar -->
+  <div style="background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0,0,0,0.05); padding: 14px 20px; border-radius: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+    <!-- Search Box -->
+    <div class="search-input-wrapper">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input 
+        type="text" 
+        v-model="aiLogSearchQuery" 
+        placeholder="Tìm kiếm theo câu hỏi hoặc câu trả lời..."
+      />
+    </div>
+
+    <!-- Toolbar Actions -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button @click="fetchAiLogs" class="btn-icon-label secondary" title="Tải lại dữ liệu">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6M1 20v-6h6"></path>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        Làm mới
+      </button>
+
+      <button @click="clearAllAiLogs" class="btn-icon-label danger" title="Xóa tất cả nhật ký">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Xóa toàn bộ
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State Indicator -->
+  <div v-if="loadingAiLogs" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 0; background: #ffffff; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); gap: 12px;">
+    <div style="width: 32px; height: 32px; border: 3.5px solid rgba(0,122,255,0.15); border-top-color: #007aff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <span style="font-size: 13.5px; font-weight: 600; color: #86868b;">Đang tải danh sách nhật ký chat AI...</span>
+  </div>
+
+  <!-- Empty Log State -->
+  <div v-else-if="filteredAiLogs.length === 0" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); text-align: center; gap: 16px;">
+    <div style="width: 72px; height: 72px; border-radius: 20px; background: rgba(0, 122, 255, 0.05); display: flex; align-items: center; justify-content: center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </div>
+    <div>
+      <h3 style="font-size: 16px; font-weight: 700; color: #1d1d1f; margin: 0 0 6px 0;">Không tìm thấy lịch sử chat của Admin</h3>
+      <p style="font-size: 13px; color: #86868b; max-width: 340px; margin: 0; line-height: 1.4;">Chưa có truy vấn nào được thực hiện hoặc không tìm thấy kết quả nào khớp với cụm từ tìm kiếm.</p>
+    </div>
+  </div>
+
+  <!-- Main Chat Log Table -->
+  <div v-else class="table-wrapper mango-card" style="margin: 0; background: #ffffff; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.01); overflow: auto !important;">
+    <table class="xcode-table" style="width: 100%; min-width: 800px; border-collapse: collapse; text-align: left; table-layout: fixed;">
+      <thead>
+        <tr style="background: #f5f5f7; border-bottom: 1px solid rgba(0,0,0,0.05);">
+          <th style="width: 160px; padding: 14px 16px; font-size: 11.5px; font-weight: 700; color: #86868b; text-transform: uppercase;">Thời gian</th>
+          <th style="padding: 14px 16px; font-size: 11.5px; font-weight: 700; color: #86868b; text-transform: uppercase;">Nội dung hội thoại</th>
+          <th style="width: 100px; padding: 14px 16px; text-align: center; font-size: 11.5px; font-weight: 700; color: #86868b; text-transform: uppercase;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="log in filteredAiLogs" :key="log.session_id" class="ai-table-row" style="border-bottom: 1px solid rgba(0,0,0,0.04); vertical-align: top;">
+          <!-- Timestamp -->
+          <td style="padding: 16px; font-size: 12.5px; color: #86868b; font-weight: 500;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span>{{ log.thoi_gian.split(' ')[0] }}</span>
+              <span style="font-size: 11.5px; color: #c1c1c4; font-weight: 600;">{{ log.thoi_gian.split(' ')[1] }}</span>
+            </div>
+            <div style="margin-top: 8px;">
+              <span style="font-size: 10.5px; background: rgba(0, 122, 255, 0.08); color: #007aff; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 0.5px solid rgba(0, 122, 255, 0.15);">
+                {{ log.messages.length }} lượt hỏi đáp
+              </span>
+            </div>
+          </td>
+          
+          <!-- Chat content cards (Session Thread) -->
+          <td style="padding: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 14px; max-height: 320px; overflow-y: auto; padding-right: 8px;">
+              <div v-for="(msg, index) in log.messages" :key="msg.id" style="display: flex; flex-direction: column; gap: 8px; border-bottom: 1.5px dashed rgba(0,0,0,0.04); padding-bottom: 12px; margin-bottom: 4px;" :style="{ borderBottom: index === log.messages.length - 1 ? 'none' : '1.5px dashed rgba(0,0,0,0.04)', paddingBottom: index === log.messages.length - 1 ? '0' : '12px', marginBottom: index === log.messages.length - 1 ? '0' : '4px' }">
+                <!-- Question -->
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="font-size: 9.5px; background: rgba(0, 122, 255, 0.08); color: #007aff; padding: 2px 6px; border-radius: 5px; font-weight: 800; letter-spacing: 0.5px; border: 0.5px solid rgba(0, 122, 255, 0.15); margin-top: 2px; text-transform: uppercase;">Hỏi</span>
+                  <div class="bubble-card question" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                    {{ msg.cau_hoi }}
+                  </div>
+                </div>
+                <!-- Response -->
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="font-size: 9.5px; background: rgba(52, 199, 89, 0.08); color: #34c759; padding: 2px 6px; border-radius: 5px; font-weight: 800; letter-spacing: 0.5px; border: 0.5px solid rgba(52, 199, 89, 0.15); margin-top: 2px; text-transform: uppercase;">Đáp</span>
+                  <div class="bubble-card" style="flex: 1; padding: 8px 12px; font-size: 13px; white-space: pre-line;">
+                    {{ msg.tra_loi }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+          
+          <!-- Actions -->
+          <td style="padding: 16px; text-align: center;">
+            <button 
+              @click="deleteAiLog(log.session_id)" 
+              style="background: transparent; border: none; border-radius: 8px; color: #ff3b30; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; outline: none; border: 1px solid rgba(255, 59, 48, 0.1);"
+              onmouseover="this.style.backgroundColor='rgba(255, 59, 48, 0.1)'; this.style.transform='scale(1.05)';"
+              onmouseout="this.style.backgroundColor='transparent'; this.style.transform='scale(1)';"
+              title="Xóa cuộc hội thoại này"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  </div> <!-- Closes the display flex wrapper -->
+
+  <!-- AI Model Configuration Modal -->
+  <div v-if="showAiConfigModal" class="modal-overlay" @click.self="showAiConfigModal = false" style="z-index: 9999;">
+    <div class="modal product-modal" style="width: 560px; max-height: 90vh; overflow-y: auto; background: #ffffff; border-radius: 24px; padding: 24px 32px; text-align: left; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1.5px solid rgba(255,255,255,0.7); backdrop-filter: blur(20px);">
+      <div class="modal-title" style="border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 14px; font-size: 20px; font-weight: 800; color: #1d1d1f; display: flex; align-items: center; gap: 8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Cấu hình AI Model
+      </div>
+      
+      <div class="admin-form" style="margin-top: 20px; display: flex; flex-direction: column; gap: 18px;">
+        <!-- Provider Selector -->
+        <div class="form-group">
+          <label class="stat-label" style="display: block; font-size: 11.5px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 6px;">Nhà cung cấp dịch vụ (API Provider) *</label>
+          <select v-model="aiConfigForm.provider" class="mango-select" style="height: 45px; width: 100%; border-radius: 12px; border: 1.5px solid rgba(0,0,0,0.08); padding: 0 12px; outline: none; font-weight: 600;">
+            <option value="DeepSeek">DeepSeek AI</option>
+          </select>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="form-group">
+          <label class="stat-label" style="display: block; font-size: 11.5px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 6px;">DeepSeek API Key *</label>
+          <input 
+            type="password" 
+            v-model="aiConfigForm.apiKey" 
+            class="mango-input" 
+            placeholder="Nhập API Key của DeepSeek (sk-...)" 
+            style="height: 45px; width: 100%; border-radius: 12px; border: 1.5px solid rgba(0,0,0,0.08); padding: 0 16px; outline: none;"
+          />
+          <div style="font-size: 11.5px; color: #86868b; margin-top: 5px;">Key này được lưu cục bộ trong ứng dụng và chỉ dùng để gọi API Trợ lý.</div>
+        </div>
+
+        <!-- Model Selection -->
+        <div class="form-group">
+          <label class="stat-label" style="display: block; font-size: 11.5px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 6px;">Lựa chọn Model (DeepSeek Model) *</label>
+          <select v-model="aiConfigForm.model" class="mango-select" style="height: 45px; width: 100%; border-radius: 12px; border: 1.5px solid rgba(0,0,0,0.08); padding: 0 12px; outline: none; font-weight: 600;">
+            <option value="deepseek-chat">deepseek-chat (Độ trễ thấp, hội thoại thông minh)</option>
+            <option value="deepseek-reasoner">deepseek-reasoner (R1 - Suy nghĩ chuyên sâu)</option>
+          </select>
+        </div>
+
+        <!-- Toggle Switch Active -->
+        <div style="display: flex; align-items: center; gap: 12px; background: rgba(0, 122, 255, 0.03); border: 1px solid rgba(0, 122, 255, 0.08); border-radius: 14px; padding: 14px 18px;">
+          <label class="ios-switch">
+            <input type="checkbox" v-model="aiConfigForm.isActive">
+            <span class="slider"></span>
+          </label>
+          <div>
+            <span style="font-size: 13.5px; font-weight: 700; color: #1d1d1f; display: block;">Kích hoạt Trợ lý ảo (Peach Assistant)</span>
+            <span style="font-size: 11.5px; color: #86868b;">Bật hoặc tắt khả năng trả lời của Trợ lý AI trên hệ thống.</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions" style="margin-top: 32px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="modal-btn cancel" @click="showAiConfigModal = false" style="background: rgba(0,0,0,0.04); color: #1d1d1f; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;">Hủy bỏ</button>
+        <button class="modal-btn confirm" @click="saveAiConfig" style="background: #007aff; color: #ffffff; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);">Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+</div>
+

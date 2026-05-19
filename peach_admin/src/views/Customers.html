@@ -1,0 +1,686 @@
+<div v-if="activeTab === 'customers'" class="view-pane customers-view">
+   <div class="pane-header mango-flex-between">
+      <div style="display: flex; align-items: center; gap: 12px; height: 100%;">
+         <h1 style="margin: 0 !important; line-height: 1 !important; display: inline-flex; align-items: center;">Quản lý người dùng</h1>
+         <button v-if="customersPendingCount > 0" @click="markAllCustomersAsProcessed"
+            style="background: rgba(52, 199, 89, 0.08) !important; color: #34C759 !important; border: 1.5px solid #34C759 !important; border-radius: 8px; font-weight: 700; font-size: 11.5px; padding: 5px 10px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: all 0.2s; outline: none; align-self: center;"
+            title="Duyệt/Xử lý toàn bộ các yêu cầu đang chờ">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: block;">
+               <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span style="line-height: 1;">Duyệt tất cả ({{ customersPendingCount }})</span>
+         </button>
+      </div>
+      <div v-if="customerSubTab === 'list'" class="flex-gap-12 flex-center-h">
+         <!-- Bulk Delete Button -->
+         <button v-if="selectedCustomerIds.length > 0" class="action-btn danger" @click.stop.prevent="deleteSelectedCustomers"
+            style="background: #FF3B30 !important; color: white !important; border: none !important; border-radius: 12px !important; font-weight: 700 !important; padding: 7px 20px !important;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+               style="margin-right: 8px;">
+               <polyline points="3 6 5 6 21 6"></polyline>
+               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Xóa {{ selectedCustomerIds.length }} đã chọn
+         </button>
+
+         <div class="search-box relative">
+            <svg class="icon-search" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2">
+               <circle cx="11" cy="11" r="8"></circle>
+               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" v-model="customerFilterQuery" placeholder="Tìm tên, email, sđt..."
+               class="mango-input padding-l-36 width-250">
+         </div>
+         <!-- Nút thêm người dùng đã được loại bỏ để đảm bảo bảo mật (Người dùng tự đăng ký) -->
+         <div style="width: 1px;"></div>
+      </div>
+      <div v-else class="flex-gap-12 flex-center-h">
+         <button @click="fetchResetRequests" class="action-btn info" 
+                 style="background: rgba(0, 122, 255, 0.08) !important; color: #007aff !important; border: none !important; border-radius: 12px !important; font-weight: 700 !important; padding: 7px 16px !important; display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+            Làm mới yêu cầu
+         </button>
+      </div>
+   </div>
+
+   <!-- Sub-Tab Navigation Bar -->
+   <div class="sub-tab-bar" style="display: flex; gap: 8px; border-bottom: 1px solid rgba(0, 0, 0, 0.06); margin-bottom: 24px; padding-bottom: 8px;">
+      <div class="sub-tab-item" :class="{ active: customerSubTab === 'list' }" @click="customerSubTab = 'list'"
+           style="font-size: 13px; font-weight: 700; color: #86868b; cursor: pointer; padding: 6px 14px; border-radius: 8px; transition: all 0.2s;"
+           :style="customerSubTab === 'list' ? { color: '#007aff', background: 'rgba(0, 122, 255, 0.08)' } : {}">
+         Danh sách tài khoản
+      </div>
+      <div class="sub-tab-item" :class="{ active: customerSubTab === 'requests' }" @click="customerSubTab = 'requests'"
+           style="font-size: 13px; font-weight: 700; color: #86868b; cursor: pointer; padding: 6px 14px; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 6px;"
+           :style="customerSubTab === 'requests' ? { color: '#007aff', background: 'rgba(0, 122, 255, 0.08)' } : {}">
+         Yêu cầu khôi phục PIN & Mật khẩu
+         <span v-if="pendingRequestsCount > 0" 
+               style="background: #ff3b30; color: white; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; min-width: 16px; text-align: center; line-height: 14px; height: 14px;">
+            {{ pendingRequestsCount }}
+         </span>
+      </div>
+      <div class="sub-tab-item" :class="{ active: customerSubTab === 'business' }" @click="customerSubTab = 'business'"
+           style="font-size: 13px; font-weight: 700; color: #86868b; cursor: pointer; padding: 6px 14px; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 6px;"
+           :style="customerSubTab === 'business' ? { color: '#007aff', background: 'rgba(0, 122, 255, 0.08)' } : {}">
+         Yêu cầu nâng cấp Doanh nghiệp
+         <span v-if="pendingBusinessRequestsCount > 0" 
+               style="background: #ff9500; color: white; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; min-width: 16px; text-align: center; line-height: 14px; height: 14px;">
+            {{ pendingBusinessRequestsCount }}
+         </span>
+      </div>
+   </div>
+
+   <!-- Sub-Tab 1: Customer Accounts List -->
+   <div v-if="customerSubTab === 'list'" class="table-wrapper mango-card">
+      <table class="xcode-table">
+         <thead>
+            <tr>
+               <th style="width: 40px; padding-left: 20px;">
+                  <input type="checkbox"
+                     :checked="selectedCustomerIds.length === filteredCustomers.length && filteredCustomers.length > 0"
+                     @change="toggleSelectAllCustomers" style="cursor: pointer; width: 16px; height: 16px;">
+               </th>
+               <th style="width: 25%;">KHÁCH HÀNG</th>
+               <th style="width: 32%;">LIÊN HỆ</th>
+               <th style="width: 10%;">HẠNG</th>
+               <th style="width: 11%;">PHÂN LOẠI</th>
+               <th style="width: 12%;">TRẠNG THÁI</th>
+               <th style="width: 10%;">THAO TÁC</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr v-for="c in filteredCustomers" :key="c.id"
+               :class="{ 'row-selected': selectedCustomerIds.includes(c.id) }">
+               <td style="padding-left: 20px;">
+                  <input type="checkbox" :checked="selectedCustomerIds.includes(c.id)"
+                     @change="toggleCustomerSelection(c.id)" style="cursor: pointer; width: 16px; height: 16px;">
+               </td>
+               <td>
+                  <div class="flex-center-h gap-12" style="justify-content: flex-start;">
+                     <div v-if="c.hinh_anh" class="avatar-mini-img">
+                        <img :src="c.hinh_anh" @error="handleAvatarError(c)" />
+                     </div>
+                     <div v-else class="avatar-mini" :style="{ background: stringToColor(c.ho_ten || c.name || 'U') }">
+                        {{ (c.ho_ten || c.name || 'U').charAt(0) }}
+                     </div>
+                     <span class="bold">{{ c.ho_ten || c.name }}</span>
+                  </div>
+               </td>
+               <td>
+                  <div class="contact-card-cell" style="display: flex; flex-direction: column; gap: 6px;">
+                     <!-- Email Row -->
+                     <div class="contact-row" style="display: flex; align-items: center; gap: 8px;">
+                        <span class="contact-icon" style="color: #007aff; display: flex; align-items: center;" title="Email">
+                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                              <polyline points="22,6 12,13 2,6"></polyline>
+                           </svg>
+                        </span>
+                        <span class="contact-text small" style="font-weight: 600; color: #1d1d1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;" :title="c.email">{{ c.email }}</span>
+                        <button class="copy-btn-mini" @click.stop.prevent="copyText(c.email, 'Email')" title="Sao chép Email"
+                           style="background: transparent; border: none; padding: 2px; color: #86868b; cursor: pointer; display: flex; align-items: center; border-radius: 4px; margin-left: 2px;">
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                           </svg>
+                        </button>
+                     </div>
+                     <!-- Phone Row -->
+                     <div class="contact-row" style="display: flex; align-items: center; gap: 8px;">
+                        <span class="contact-icon" style="color: #34c759; display: flex; align-items: center;" title="Số điện thoại">
+                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                           </svg>
+                        </span>
+                        <span v-if="c.so_dien_thoai || c.phone" class="contact-text x-small dim" style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" :title="c.so_dien_thoai || c.phone">
+                           {{ c.so_dien_thoai || c.phone }}
+                        </span>
+                        <span v-else class="contact-text x-small dim" style="font-style: italic; color: #aeaeae;">
+                           Chưa cập nhật SĐT
+                        </span>
+                        <button v-if="c.so_dien_thoai || c.phone" class="copy-btn-mini" @click.stop.prevent="copyText(c.so_dien_thoai || c.phone, 'Số điện thoại')" title="Sao chép Số điện thoại"
+                           style="background: transparent; border: none; padding: 2px; color: #86868b; cursor: pointer; display: flex; align-items: center; border-radius: 4px; margin-left: 2px;">
+                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                           </svg>
+                        </button>
+                     </div>
+                  </div>
+               </td>
+               <td>
+                  <span class="rank-badge" :style="{ color: getRankColor(c), borderColor: getRankColor(c) }">
+                     {{ getMembershipRank(c) }}
+                  </span>
+               </td>
+               <td><span class="bold dim uppercase" style="font-size: 11px;">{{ c.vai_tro === 'doanh_nghiep' ? 'Doanh nghiệp' : 'Cá nhân' }}</span></td>
+               <td>
+                  <span
+                     :class="['status-dot', (c.trang_thai === 'dang_hoat_dong' || c.trang_thai === 'Active') ? 'online' : '']"></span>
+                  {{ c.trang_thai === 'dang_hoat_dong' ? 'Hoạt động' : c.trang_thai === 'bi_khoa' ? 'Bị khóa' :
+                  c.trang_thai || 'Active' }}
+               </td>
+               <td>
+                  <div class="flex-center gap-8">
+                     <button class="action-btn-mini primary" style="background: rgba(0, 122, 255, 0.08) !important; color: #007aff !important; border: none !important; border-radius: 8px !important;" title="Trò chuyện" @click="openAdminChatModal(c)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                     </button>
+                     <button class="action-btn-mini info" title="Chi tiết / Sửa" @click="openEditCustomerModal(c)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="2">
+                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                     </button>
+                     <button class="action-btn-mini danger" title="Khóa/Xóa" @click="deleteCustomer(c.id)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="2">
+                           <polyline points="3 6 5 6 21 6"></polyline>
+                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                           </path>
+                        </svg>
+                     </button>
+                  </div>
+               </td>
+            </tr>
+            <tr v-if="filteredCustomers.length === 0">
+               <td colspan="7" style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
+                  <div style="font-size: 14px; font-weight: 600;">Không có người dùng nào</div>
+                  <div style="font-size: 12px; margin-top: 4px;">Thêm người dùng mới hoặc thay đổi bộ lọc.</div>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+   </div>
+
+   <div v-if="customerSubTab === 'list'" style="padding: 12px 4px; margin-top: 8px;">
+      <span style="font-size: 12px; color: #86868b; font-weight: 500;">Hiển thị {{ filteredCustomers.length }} / {{
+         customers.length }} người dùng</span>
+   </div>
+
+   <!-- Sub-Tab 2: PIN & Password Recovery Requests Grid -->
+   <div v-if="customerSubTab === 'requests'" class="requests-view" style="display: flex; flex-direction: column; gap: 16px;">
+      <div v-if="resetRequests.length === 0" style="text-align: center; padding: 80px 20px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+         <div style="margin-bottom: 16px; display: flex; justify-content: center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="1.5">
+               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+               <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+         </div>
+         <div style="font-size: 16px; font-weight: 700; color: #1d1d1f;">Không có yêu cầu khôi phục nào</div>
+         <div style="font-size: 13px; color: #86868b; margin-top: 4px;">Hệ thống an toàn. Tất cả yêu cầu của khách hàng đã được xử lý xong!</div>
+      </div>
+      <div v-else class="requests-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
+         <div v-for="req in resetRequests" :key="req.id" class="request-card mango-card" 
+              style="padding: 20px; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.05); background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s;"
+              :style="req.status === 'pending' ? { borderLeft: '4px solid #ff9500' } : { borderLeft: '4px solid #34c759' }">
+            <div>
+               <!-- Request Type & Status Badges -->
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                     <!-- Key Icon for Password -->
+                     <span v-if="req.type === 'password'" style="background: rgba(0, 122, 255, 0.1); color: #007aff; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                     </span>
+                     <!-- Lock Icon for PIN -->
+                     <span v-else style="background: rgba(88, 86, 214, 0.1); color: #5856d6; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H5v14h14V8h-3V6a4 4 0 0 0-4-4zm-2 6V6a2 2 0 1 1 4 0v2h-4z"></path></svg>
+                     </span>
+                     <span style="font-size: 13px; font-weight: 700; color: #1d1d1f;">
+                        {{ req.type === 'password' ? 'Khôi phục Mật khẩu' : 'Khôi phục mã PIN' }}
+                     </span>
+                  </div>
+                  <!-- Status Badge -->
+                  <span :style="req.status === 'pending' ? { background: '#fff9e6', color: '#ff9500' } : { background: '#eafaf1', color: '#27ae60' }"
+                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                     {{ req.status === 'pending' ? 'Chờ xử lý' : 'Đã xử lý' }}
+                  </span>
+               </div>
+
+               <!-- User Request Info -->
+               <div style="margin-bottom: 8px;">
+                  <div style="font-size: 11px; color: #86868b; font-weight: 500;">Họ tên khai báo:</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-top: 1px;">{{ req.fullName }}</div>
+               </div>
+               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                  <div>
+                     <div style="font-size: 11px; color: #86868b; font-weight: 500;">Email:</div>
+                     <div style="font-size: 12px; font-weight: 600; color: #1d1d1f; margin-top: 1px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" :title="req.email">{{ req.email }}</div>
+                  </div>
+                  <div>
+                     <div style="font-size: 11px; color: #86868b; font-weight: 500;">Số điện thoại:</div>
+                     <div style="font-size: 12px; font-weight: 600; color: #1d1d1f; margin-top: 1px;">{{ req.phone }}</div>
+                  </div>
+               </div>
+               <div style="margin-bottom: 8px;">
+                  <div style="font-size: 11px; color: #86868b; font-weight: 500;">Địa chỉ thường trú:</div>
+                  <div style="font-size: 12px; font-weight: 600; color: #1d1d1f; margin-top: 1px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" :title="req.address">{{ req.address }}</div>
+               </div>
+               <div style="margin-bottom: 16px; background: rgba(0, 0, 0, 0.02); padding: 10px; border-radius: 10px;">
+                  <div style="font-size: 11px; color: #86868b; font-weight: 500;">Lời nhắn:</div>
+                  <div style="font-size: 12px; color: #3a3a3c; margin-top: 4px; font-style: italic; white-space: pre-line; line-height: 1.4;">"{{ req.message || 'Không có lời nhắn' }}"</div>
+               </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div style="border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+               <span style="font-size: 11px; color: #86868b; font-weight: 500;">{{ formatDate(req.created_at) }}</span>
+               
+               <button v-if="req.status === 'pending'" @click="openVerifyModal(req)"
+                       style="background: #007aff !important; color: white !important; font-weight: 700; border: none; border-radius: 10px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);">
+                  Xác minh & Cấp lại
+               </button>
+               
+               <div v-else style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                  <div style="font-size: 11px; color: #34c759; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                     Đã hoàn tất
+                  </div>
+                  <div v-if="req.new_password" style="font-size: 11px; color: #1d1d1f; font-weight: 600; background: #e5e5ea; padding: 2px 6px; border-radius: 4px; font-family: monospace;">
+                     MK mới: {{ req.new_password }}
+                  </div>
+                  <div v-if="req.new_pin" style="font-size: 11px; color: #1d1d1f; font-weight: 600; background: #e5e5ea; padding: 2px 6px; border-radius: 4px; font-family: monospace;">
+                     PIN mới: {{ req.new_pin }}
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Customer Modal (Thêm/Sửa) -->
+   <div v-if="showCustomerModal" class="modal-overlay" @click.self="showCustomerModal = false">
+      <div class="modal product-modal" style="width: 550px;">
+         <div class="modal-title">Cập nhật thông tin khách hàng</div>
+
+         <div class="admin-form" style="margin-top: 24px;">
+            <div class="form-group">
+               <label>Họ tên khách hàng *</label>
+               <input v-model="customerForm.ho_ten" class="mango-input" placeholder="Nhập họ tên..." maxlength="100" />
+            </div>
+
+            <div class="mango-grid grid-2" style="gap: 20px;">
+               <div class="form-group">
+                  <label>Email liên hệ *</label>
+                  <input v-model="customerForm.email" class="mango-input" placeholder="email@example.com"
+                     type="email" maxlength="50" />
+               </div>
+               <div class="form-group">
+                  <label>Số điện thoại</label>
+                  <input v-model="customerForm.so_dien_thoai" class="mango-input" placeholder="090xxxxxxx" maxlength="10" />
+               </div>
+            </div>
+
+            <div class="form-group">
+               <label>Địa chỉ thường trú</label>
+               <input v-model="customerForm.dia_chi" class="mango-input" placeholder="Địa chỉ chi tiết..." maxlength="255" />
+            </div>
+
+            <div class="form-group">
+               <label>Ảnh đại diện (URL)</label>
+               <input v-model="customerForm.hinh_anh" class="mango-input" placeholder="https://..." maxlength="1000" />
+            </div>
+
+            <div class="mango-grid grid-2" style="gap: 20px;">
+               <div class="form-group">
+                  <label>Loại khách hàng</label>
+                  <select v-model="customerForm.vai_tro" class="mango-select">
+                     <option value="nguoi_dung">Cá nhân</option>
+                     <option value="doanh_nghiep">Doanh nghiệp</option>
+                     <option value="admin">Quản trị viên (Admin)</option>
+                  </select>
+               </div>
+               <div class="form-group">
+                  <label>Trạng thái tài khoản</label>
+                  <select v-model="customerForm.trang_thai" class="mango-select">
+                     <option value="dang_hoat_dong">Đang hoạt động</option>
+                     <option value="bi_khoa">Bị khóa</option>
+                  </select>
+               </div>
+            </div>
+         </div>
+
+         <div class="modal-actions" style="margin-top: 40px;">
+            <button class="modal-btn cancel" @click="showCustomerModal = false">Hủy bỏ</button>
+            <button class="modal-btn confirm" @click="saveCustomer">Lưu thay đổi</button>
+         </div>
+      </div>
+   </div>
+
+   <!-- Verify & Reset Modal -->
+   <div v-if="showVerifyModal" class="modal-overlay" @click.self="showVerifyModal = false">
+      <div class="modal product-modal" style="width: 580px; max-width: 90%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.08); overflow: hidden;">
+         <div class="modal-header" style="background: linear-gradient(135deg, #007aff, #0056b3); padding: 20px 24px; color: white; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+               <span style="font-size: 16px; font-weight: 700;">Hệ thống xác minh & Cấp lại bảo mật</span>
+            </div>
+            <button @click="showVerifyModal = false" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px; font-weight: 300;">&times;</button>
+         </div>
+
+         <div style="padding: 24px; max-height: calc(100vh - 120px); overflow-y: auto;">
+            <!-- User Declared Information -->
+            <div style="background: rgba(0, 122, 255, 0.04); border: 1px solid rgba(0, 122, 255, 0.1); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+               <div style="font-weight: 700; font-size: 13px; color: #007aff; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                  Thông tin khách hàng tự khai báo
+               </div>
+               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; font-size: 13px;">
+                  <div><strong style="color: #515154;">Họ tên khai báo:</strong> <div style="font-weight: 600; color: #1d1d1f; margin-top: 2px;">{{ selectedRequest.fullName }}</div></div>
+                  <div><strong style="color: #515154;">Email đăng ký:</strong> <div style="font-weight: 600; color: #1d1d1f; margin-top: 2px;">{{ selectedRequest.email }}</div></div>
+                  <div><strong style="color: #515154;">Số điện thoại:</strong> <div style="font-weight: 600; color: #1d1d1f; margin-top: 2px;">{{ selectedRequest.phone }}</div></div>
+                  <div><strong style="color: #515154;">Địa chỉ thường trú:</strong> <div style="font-weight: 600; color: #1d1d1f; margin-top: 2px;">{{ selectedRequest.address }}</div></div>
+               </div>
+            </div>
+
+            <!-- Admin Detailed Verification Form -->
+            <div style="margin-bottom: 24px;">
+               <div style="font-weight: 700; font-size: 14px; color: #1d1d1f; margin-bottom: 6px;">Điền thông tin chi tiết để xác minh trùng khớp:</div>
+               <p style="font-size: 12px; color: #86868b; margin-bottom: 16px; line-height: 1.4;">
+                  Để tránh giả mạo, hãy kiểm tra hồ sơ thực tế của khách hàng (qua cuộc gọi, chứng minh nhân dân hoặc lịch sử mua hàng) và điền chính xác các thông tin đăng ký bên dưới.
+               </p>
+
+               <div style="display: flex; flex-direction: column; gap: 14px;">
+                  <div class="form-group" style="margin-bottom: 0px;">
+                     <label style="font-size: 12px; font-weight: 600; color: #3a3a3c; margin-bottom: 6px; display: block;">Họ và tên đăng ký đầy đủ *</label>
+                     <input v-model="verifyForm.fullName" class="mango-input" placeholder="Nhập tên đăng ký của khách hàng..." style="width: 100%; height: 38px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);" />
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                     <div class="form-group" style="margin-bottom: 0px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #3a3a3c; margin-bottom: 6px; display: block;">Email đăng ký chính xác *</label>
+                        <input v-model="verifyForm.email" type="email" class="mango-input" placeholder="email@example.com" style="width: 100%; height: 38px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);" />
+                     </div>
+                     <div class="form-group" style="margin-bottom: 0px;">
+                        <label style="font-size: 12px; font-weight: 600; color: #3a3a3c; margin-bottom: 6px; display: block;">Số điện thoại đăng ký *</label>
+                        <input v-model="verifyForm.phone" type="tel" class="mango-input" placeholder="09xxxxxxxx" style="width: 100%; height: 38px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);" />
+                     </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 0px;">
+                     <label style="font-size: 12px; font-weight: 600; color: #3a3a3c; margin-bottom: 6px; display: block;">Địa chỉ thường trú đã đăng ký *</label>
+                     <input v-model="verifyForm.address" class="mango-input" placeholder="Nhập địa chỉ đăng ký..." style="width: 100%; height: 38px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15);" />
+                  </div>
+               </div>
+
+               <div style="margin-top: 18px;">
+                  <button @click="verifyCustomer" 
+                          style="width: 100%; background: #5856d6 !important; color: white !important; font-weight: 700; border: none; border-radius: 12px; padding: 12px; font-size: 13px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(88, 86, 214, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                     Kiểm tra trùng khớp hệ thống
+                  </button>
+               </div>
+            </div>
+
+            <!-- Verification System Result -->
+            <div v-if="isVerified" style="margin-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 20px;">
+               <!-- MATCHED -->
+               <div v-if="isMatched">
+                  <div style="background: rgba(52, 199, 89, 0.08); border: 1.5px solid #34c759; border-radius: 12px; padding: 16px; margin-bottom: 20px; color: #27ae60;">
+                     <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Trùng khớp thành công! Đã tìm thấy tài khoản hợp lệ
+                     </div>
+                     <div style="color: #3a3a3c; font-size: 13px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px;">
+                        <strong>ID Tài khoản:</strong> <span style="font-weight: 600; color: #1d1d1f;">#{{ matchedUser.id }}</span>
+                        <strong>Tên đầy đủ:</strong> <span style="font-weight: 600; color: #1d1d1f;">{{ matchedUser.ho_ten }}</span>
+                        <strong>Email đăng ký:</strong> <span style="font-weight: 600; color: #1d1d1f;">{{ matchedUser.email }}</span>
+                        <strong>SĐT đăng ký:</strong> <span style="font-weight: 600; color: #1d1d1f;">{{ matchedUser.so_dien_thoai }}</span>
+                        <strong>Địa chỉ đăng ký:</strong> <span style="font-weight: 600; color: #1d1d1f;">{{ matchedUser.dia_chi }}</span>
+                     </div>
+                  </div>
+
+                  <!-- Reset Buttons - Active and clickable -->
+                  <div style="display: flex; gap: 16px; margin-top: 16px;">
+                     <!-- Reset Password button -->
+                     <button v-if="selectedRequest.type === 'password'" @click="resetPassword" :disabled="isResetting"
+                             style="flex: 1; background: #007aff !important; color: white !important; font-weight: 700; border: none; border-radius: 12px; padding: 12px; font-size: 13px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                        {{ isResetting ? 'Đang cấp mật khẩu...' : 'Cấp lại Mật khẩu mới' }}
+                     </button>
+                     
+                     <!-- Reset PIN button -->
+                     <button v-if="selectedRequest.type === 'pin'" @click="resetPin" :disabled="isResetting"
+                             style="flex: 1; background: #34c759 !important; color: white !important; font-weight: 700; border: none; border-radius: 12px; padding: 12px; font-size: 13px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        {{ isResetting ? 'Đang cấp mã PIN...' : 'Cấp mã PIN mới' }}
+                     </button>
+                  </div>
+
+                  <!-- Generated Results -->
+                  <div v-if="generatedPassword" style="margin-top: 18px; background: rgba(0, 122, 255, 0.03); border: 1px solid rgba(0,122,255,0.15); border-radius: 14px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                     <div style="font-size: 11px; color: #007aff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Mật khẩu mới đã cấp thành công</div>
+                     <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1.5px dashed #007aff; border-radius: 10px; padding: 6px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                        <span style="font-size: 20px; font-weight: 800; color: #1d1d1f; font-family: monospace; letter-spacing: 1px;">{{ generatedPassword }}</span>
+                        <button @click="copyText(generatedPassword, 'mật khẩu mới')"
+                                style="background: #007aff !important; color: white !important; border: none; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0, 122, 255, 0.15);">
+                           Sao chép
+                        </button>
+                     </div>
+                     <div style="font-size: 11px; color: #86868b; margin-top: 2px;">Hãy gửi mật khẩu này qua kênh liên hệ trực tiếp cho khách hàng.</div>
+                  </div>
+
+                  <div v-if="generatedPin" style="margin-top: 18px; background: rgba(52, 199, 89, 0.03); border: 1px solid rgba(52,199,89,0.15); border-radius: 14px; padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                     <div style="font-size: 11px; color: #34c759; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Mã PIN mới đã cấp thành công</div>
+                     <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1.5px dashed #34c759; border-radius: 10px; padding: 6px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                        <span style="font-size: 20px; font-weight: 800; color: #1d1d1f; font-family: monospace; letter-spacing: 3px;">{{ generatedPin }}</span>
+                        <button @click="copyText(generatedPin, 'mã PIN mới')"
+                                style="background: #34c759 !important; color: white !important; border: none; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(52, 199, 89, 0.15);">
+                           Sao chép
+                        </button>
+                     </div>
+                     <div style="font-size: 11px; color: #86868b; margin-top: 2px;">Hãy gửi mã PIN này qua kênh liên hệ trực tiếp cho khách hàng.</div>
+                  </div>
+               </div>
+
+               <!-- NOT MATCHED -->
+               <div v-else>
+                  <div style="background: rgba(255, 59, 48, 0.08); border: 1.5px solid #ff3b30; border-radius: 12px; padding: 16px; color: #ff3b30; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                     Xác minh thất bại! Thông tin chi tiết đã nhập không trùng khớp với bất kỳ tài khoản nào.
+                  </div>
+                  <p style="font-size: 12px; color: #86868b; margin-top: 10px; line-height: 1.4; font-style: italic; text-align: center;">
+                     (Các nút cấp lại mật khẩu và mã PIN đã bị khóa vì lý do bảo mật. Vui lòng kiểm tra lại thông tin chi tiết)
+                  </p>
+               </div>
+            </div>
+         </div>
+
+         <div style="background: #f5f5f7; padding: 16px 24px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: flex-end; gap: 12px;">
+            <button @click="showVerifyModal = false" style="background: #e5e5ea; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer;">Đóng lại</button>
+         </div>
+      </div>
+   </div>
+
+   <!-- Sub-Tab 3: Business Upgrade Requests -->
+   <div v-if="customerSubTab === 'business'" class="business-requests-view" style="display: flex; flex-direction: column; gap: 16px;">
+      <div v-if="businessRequests.length === 0" style="text-align: center; padding: 80px 20px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+         <div style="margin-bottom: 16px; display: flex; justify-content: center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="1.5">
+               <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+         </div>
+         <div style="font-size: 16px; font-weight: 700; color: #1d1d1f;">Không có yêu cầu nâng cấp doanh nghiệp nào</div>
+         <div style="font-size: 13px; color: #86868b; margin-top: 4px;">Hiện tại không có khách hàng nào gửi đơn đăng ký nâng cấp tài khoản.</div>
+      </div>
+      <div v-else class="requests-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px;">
+         <div v-for="req in businessRequests" :key="req.id" class="request-card mango-card" 
+              style="padding: 20px; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.05); background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s; box-sizing: border-box;"
+              :style="req.trang_thai === 'cho_duyet' ? { borderLeft: '4px solid #ff9500' } : req.trang_thai === 'da_duyet' ? { borderLeft: '4px solid #34c759' } : { borderLeft: '4px solid #ff3b30' }">
+            <div>
+               <!-- Header & Status -->
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                     <span style="background: rgba(0, 122, 255, 0.1); color: #007aff; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                     </span>
+                     <span style="font-size: 13px; font-weight: 700; color: #1d1d1f;">
+                        Đăng ký Doanh nghiệp
+                     </span>
+                  </div>
+                  <span :style="req.trang_thai === 'cho_duyet' ? { background: '#fff9e6', color: '#ff9500' } : req.trang_thai === 'da_duyet' ? { background: '#eafaf1', color: '#27ae60' } : { background: '#fdf2f2', color: '#ef4444' }"
+                        style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                     {{ req.trang_thai === 'cho_duyet' ? 'Chờ duyệt' : req.trang_thai === 'da_duyet' ? 'Đã duyệt' : 'Từ chối' }}
+                  </span>
+               </div>
+
+               <!-- User Info -->
+               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; background: rgba(0, 122, 255, 0.03); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(0,122,255,0.06);">
+                  <div>
+                     <div style="font-size: 10px; color: #86868b; font-weight: 500; text-align: left;">Người gửi:</div>
+                     <div style="font-size: 12px; font-weight: 700; color: #1d1d1f; margin-top: 1px; text-align: left;">{{ req.ho_ten }}</div>
+                  </div>
+                  <div>
+                     <div style="font-size: 10px; color: #86868b; font-weight: 500; text-align: left;">Email:</div>
+                     <div style="font-size: 11px; font-weight: 600; color: #515154; margin-top: 1px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; text-align: left;" :title="req.email">{{ req.email }}</div>
+                  </div>
+               </div>
+
+               <!-- Corporate Data -->
+               <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                  <div>
+                     <div style="font-size: 11px; color: #86868b; font-weight: 500; text-align: left;">Tên doanh nghiệp / Hộ kinh doanh:</div>
+                     <div style="font-size: 13px; font-weight: 700; color: #1d1d1f; margin-top: 2px; text-align: left;">{{ req.ten_doanh_nghiep }}</div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                     <div>
+                        <div style="font-size: 11px; color: #86868b; font-weight: 500; text-align: left;">Mã số thuế:</div>
+                        <div style="font-size: 12px; font-weight: 700; color: #1d1d1f; margin-top: 2px; font-family: monospace; text-align: left;">{{ req.ma_so_thue }}</div>
+                     </div>
+                     <div>
+                        <div style="font-size: 11px; color: #86868b; font-weight: 500; text-align: left;">Lĩnh vực hoạt động:</div>
+                        <div style="font-size: 12px; font-weight: 700; color: #1d1d1f; margin-top: 2px; text-align: left;">{{ req.linh_vuc_kd }}</div>
+                     </div>
+                  </div>
+                  <div>
+                     <div style="font-size: 11px; color: #86868b; font-weight: 500; text-align: left;">Trụ sở chính kinh doanh:</div>
+                     <div style="font-size: 12px; font-weight: 600; color: #3a3a3c; margin-top: 2px; line-height: 1.4; text-align: left;">{{ req.dia_chi_kd }}</div>
+                  </div>
+               </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div style="border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+               <span style="font-size: 11px; color: #86868b; font-weight: 500;">{{ req.ngay_tao }}</span>
+               
+               <div v-if="req.trang_thai === 'cho_duyet'" style="display: flex; gap: 8px;">
+                  <button @click="rejectBusinessRequest(req.id)"
+                          style="background: #fdf2f2 !important; color: #ef4444 !important; font-weight: 700; border: 1px solid #fca5a5; border-radius: 10px; padding: 6px 14px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                     Từ chối
+                  </button>
+                  <button @click="approveBusinessRequest(req.id)"
+                          style="background: #34c759 !important; color: white !important; font-weight: 700; border: none; border-radius: 10px; padding: 6px 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2);">
+                     Phê duyệt
+                  </button>
+               </div>
+               
+               <div v-else style="display: flex; align-items: center; gap: 4px;">
+                  <span v-if="req.trang_thai === 'da_duyet'" style="font-size: 12px; color: #34c759; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                     Đã nâng cấp Doanh nghiệp
+                  </span>
+                  <span v-else style="font-size: 12px; color: #ef4444; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                     Bị từ chối duyệt
+                  </span>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Admin Chat with User Modal -->
+   <div v-if="showAdminChatModal" class="modal-overlay" @click.self="showAdminChatModal = false" style="z-index: 9999;">
+      <div class="modal product-modal" style="width: 580px; height: 600px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; padding: 0;">
+         
+         <!-- Header -->
+         <div class="modal-header" style="background: linear-gradient(135deg, #007aff, #0056b3); padding: 18px 24px; color: white; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+               <div v-if="selectedChatCustomer.hinh_anh" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,255,255,0.8);">
+                  <img :src="selectedChatCustomer.hinh_anh" style="width: 100%; height: 100%; object-fit: cover;" />
+               </div>
+               <div v-else :style="{ background: stringToColor(selectedChatCustomer.ho_ten || 'U') }" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; border: 2px solid rgba(255,255,255,0.8); font-size: 16px;">
+                  {{ (selectedChatCustomer.ho_ten || 'U').charAt(0) }}
+               </div>
+               <div>
+                  <span style="font-size: 15px; font-weight: 700; display: block; line-height: 1.2;">{{ selectedChatCustomer.ho_ten }}</span>
+                  <span style="font-size: 11px; opacity: 0.85; display: block; margin-top: 2px;">{{ selectedChatCustomer.email }} (Chỉ hiện tối đa 10 tin)</span>
+               </div>
+            </div>
+            <button @click="showAdminChatModal = false" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px; font-weight: 300; line-height: 1;">&times;</button>
+         </div>
+
+         <!-- Chat Messages Container -->
+         <div id="adminChatContainer" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 14px; background: #f8f9fa;">
+            
+            <!-- Loading State -->
+            <div v-if="loadingAdminChat" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 8px;">
+               <div style="width: 20px; height: 20px; border: 2px solid rgba(0,122,255,0.15); border-top-color: #007aff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+               <span style="font-size: 12px; color: #86868b;">Đang tải tin nhắn...</span>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else-if="adminChatMessages.length === 0" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.8; gap: 12px; padding: 40px 0;">
+               <span style="font-size: 40px;">💬</span>
+               <div style="text-align: center;">
+                  <div style="font-size: 14px; font-weight: 700; color: #1d1d1f;">Chưa có cuộc trò chuyện</div>
+                  <div style="font-size: 12px; color: #86868b; margin-top: 4px;">Gửi tin nhắn đầu tiên để hỗ trợ khách hàng ngay!</div>
+               </div>
+            </div>
+
+            <!-- Chat Log -->
+            <template v-else>
+               <div v-for="msg in adminChatMessages" :key="msg.id" :style="{ alignSelf: msg.sender === 'admin' ? 'flex-end' : 'flex-start' }" style="max-width: 75%; display: flex; flex-direction: column;">
+                  <div :style="{ 
+                    backgroundColor: msg.sender === 'admin' ? '#007aff' : '#ffffff',
+                    color: msg.sender === 'admin' ? '#ffffff' : '#1d1d1f',
+                    borderRadius: msg.sender === 'admin' ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    lineHeight: '1.45',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    border: msg.sender === 'admin' ? 'none' : '1px solid rgba(0,0,0,0.06)'
+                  }">
+                     {{ msg.text }}
+                  </div>
+                  <span :style="{ alignSelf: msg.sender === 'admin' ? 'flex-end' : 'flex-start' }" style="font-size: 10px; color: #86868b; margin-top: 4px; margin-left: 4px; margin-right: 4px; font-weight: 500;">
+                     {{ msg.time }}
+                  </span>
+               </div>
+            </template>
+         </div>
+
+         <!-- Chat Input Area -->
+         <div style="background: #ffffff; padding: 16px 24px; border-top: 1px solid rgba(0,0,0,0.06); display: flex; gap: 12px; align-items: center; flex-shrink: 0;">
+            <input 
+               type="text" 
+               v-model="adminChatInputText" 
+               @keyup.enter="sendAdminChatMessage" 
+               placeholder="Nhập nội dung tin nhắn phản hồi..." 
+               style="flex: 1; background: #f5f5f7; border: 1.5px solid rgba(0,0,0,0.02); outline: none; font-size: 13px; color: #1d1d1f; padding: 10px 16px; border-radius: 20px;"
+               :disabled="loadingAdminChat"
+            />
+            <button 
+               @click="sendAdminChatMessage" 
+               :disabled="!adminChatInputText.trim() || loadingAdminChat"
+               :style="{ 
+                 backgroundColor: adminChatInputText.trim() ? '#007aff' : '#e5e5ea',
+                 color: adminChatInputText.trim() ? '#ffffff' : '#86868b',
+                 cursor: adminChatInputText.trim() ? 'pointer' : 'not-allowed'
+               }"
+               style="border: none; border-radius: 12px; font-weight: 700; padding: 10px 20px; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,122,255,0.15);"
+            >
+               Gửi phản hồi
+               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+               </svg>
+            </button>
+         </div>
+
+      </div>
+   </div>
+</div>

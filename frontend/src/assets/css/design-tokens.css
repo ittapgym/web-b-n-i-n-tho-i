@@ -1,0 +1,81 @@
+:root {
+    /* Typography - SF Pro Text */
+    --font-primary: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    --font-size-base: 17px;
+    --font-weight-base: 400;
+    --line-height-base: 1.47059; /* Approximate to 25px/17px */
+
+    /* Typography Scale */
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-md: 17px;
+    --font-size-lg: 21px;
+    --font-size-xl: 25.5px;
+    --font-size-2xl: 28px;
+    --font-size-3xl: 34px;
+    --font-size-4xl: 40px;
+
+    /* Color Palette (Apple Store Style) */
+    --color-surface-base: #000000;    /* Dark Background */
+    --color-surface-raised: #ffffff;  /* Light Background / Cards */
+    --color-surface-muted: #0071e3;   /* Apple Blue Primary */
+    --color-surface-strong: #d2d2d7;  /* Borders / Dividers */
+    
+    --color-text-primary: #1d1d1f;    /* Near Black Text */
+    --color-text-secondary: #86868b;  /* Muted Text */
+    --color-text-tertiary: #0066cc;   /* Link Blue */
+    --color-text-inverse: #f5f5f7;    /* Light Text on Dark */
+
+    /* Spacing Scale */
+    --space-1: 4px;
+    --space-2: 5px;
+    --space-3: 6px;
+    --space-4: 8px;
+    --space-5: 9px;
+    --space-6: 9.6px;
+    --space-7: 11px;
+    --space-8: 12px;
+    --space-gutter: 20px;
+
+    /* Radius */
+    --radius-xs: 50px;
+    --radius-sm: 980px; /* Pill Shape */
+    --radius-md: 12px;  /* Standard Card Radius for Apple */
+
+    /* Motion */
+    --motion-instant: 100ms;
+    --motion-fast: 250ms;
+    --motion-normal: 320ms;
+    --motion-slow: 1000ms;
+}
+
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-primary);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text-primary);
+    background-color: #ffffff; /* Sửa từ #f5f5f7 sang trắng để xóa khoảng xám dư thừa */
+}
+
+h1, h2, h3, h4 {
+    letter-spacing: -0.022em;
+}
+
+a {
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}

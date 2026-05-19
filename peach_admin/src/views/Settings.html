@@ -1,0 +1,104 @@
+<div v-if="activeTab === 'settings'" class="view-pane settings-view">
+  <div class="pane-header mango-flex-between">
+    <h1>{{ t('nav_settings') }}</h1>
+    <button class="action-btn primary" @click="saveSettings">{{ t('save_changes') }}</button>
+  </div>
+
+  <div class="settings-grid">
+    <div class="settings-menu">
+      <div class="settings-menu-item" :class="{ active: settingsTab === 'general' }" @click="settingsTab = 'general'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>{{ t('general') }}</span>
+      </div>
+      <div class="settings-menu-item" :class="{ active: settingsTab === 'theme' }" @click="settingsTab = 'theme'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <span>{{ t('appearance') }}</span>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="settings-content-wrapper">
+      
+      <!-- Tab 1: Chung (General Settings) -->
+      <div v-if="settingsTab === 'general'" class="settings-tab-pane">
+        
+        <div class="settings-section">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-label">{{ t('maintenance_mode') }}</div>
+              <div class="settings-item-desc">{{ t('maintenance_desc') }}</div>
+            </div>
+            <div class="settings-item-control">
+              <label class="ios-switch">
+                <input type="checkbox" v-model="systemConfig.maintenanceMode">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-label">{{ t('footer_greeting') }}</div>
+              <div class="settings-item-desc">{{ t('footer_greeting_desc') }}</div>
+            </div>
+            <div class="settings-item-control">
+              <input type="text" v-model="systemConfig.footerText" class="mango-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-label" style="color: #FF3B30;">{{ t('clean_temp') }}</div>
+              <div class="settings-item-desc">{{ t('clean_temp_desc') }}</div>
+            </div>
+            <div class="settings-item-control">
+              <button class="action-btn-mini danger" style="padding: 6px 12px; border-radius: 8px;" @click="cleanTempData">{{ t('clean_now') }}</button>
+            </div>
+          </div>
+        </div>
+        
+      </div> <!-- End of general tab pane -->
+
+      <!-- Tab 2: Giao diện (Theme / Appearance Settings) -->
+      <div v-if="settingsTab === 'theme'" class="settings-tab-pane">
+        
+        <div class="settings-section">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-label">{{ t('accent_color') }}</div>
+              <div class="settings-item-desc">{{ t('accent_desc') }}</div>
+            </div>
+            <div class="settings-item-control">
+              <select v-model="systemConfig.accentColor" class="mango-select">
+                <option value="blue">Xanh Đại Dương (Ocean Blue)</option>
+                <option value="orange">Cam Đào (Peach Orange)</option>
+                <option value="green">Lục Bảo (Emerald Green)</option>
+                <option value="pink">Hồng Cupertino (Apple Pink)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-label">{{ t('sys_font') }}</div>
+              <div class="settings-item-desc">{{ t('sys_font_desc') }}</div>
+            </div>
+            <div class="settings-item-control">
+              <select v-model="systemConfig.typography" class="mango-select">
+                <option value="Inter">Inter (Gọn gàng)</option>
+                <option value="Outfit">Outfit (Bo tròn cao cấp)</option>
+                <option value="Roboto">Roboto (Hiện đại chuẩn)</option>
+              </select>
+            </div>
+          </div>
+        </div> <!-- End of settings-section -->
+        
+      </div> <!-- End of theme tab pane -->
+
+    </div> <!-- End of settings-content-wrapper -->
+  </div> <!-- End of settings-grid -->
+</div> <!-- End of view-pane -->

@@ -1,0 +1,187 @@
+<div v-if="activeTab === 'coupons'" class="view-pane vouchers-view">
+  <div class="pane-header mango-flex-between">
+    <h1>Mã giảm giá (Vouchers)</h1>
+    <div class="flex-gap-12 flex-center-h">
+      <!-- Bulk Delete Button -->
+      <button v-if="selectedVoucherIds.length > 0" class="action-btn danger" @click="deleteSelectedVouchers"
+        style="background: #FF3B30 !important; color: white !important; border: none !important; border-radius: 12px !important;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          style="margin-right: 6px;">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Xóa {{ selectedVoucherIds.length }} voucher đã chọn
+      </button>
+
+      <div class="search-box relative">
+        <svg class="icon-search" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" v-model="voucherFilterQuery" placeholder="Tìm mã voucher..."
+          class="mango-input padding-l-36 width-250">
+      </div>
+      <button class="action-btn icon-btn primary" @click="openAddVoucherModal" title="+ Thêm mã mới">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper mango-card">
+    <table class="xcode-table">
+      <thead>
+        <tr>
+          <th style="width: 40px; padding-left: 20px;">
+            <input type="checkbox"
+              :checked="selectedVoucherIds.length === filteredVouchers.length && filteredVouchers.length > 0"
+              @change="toggleSelectAllVouchers" style="cursor: pointer; width: 16px; height: 16px;">
+          </th>
+          <th style="width: 150px;">MÃ VOUCHER</th>
+          <th>GIẢM GIÁ</th>
+          <th>ĐIỀU KIỆN</th>
+          <th>HẠN DÙNG</th>
+          <th>LƯỢT DÙNG</th>
+          <th>TRẠNG THÁI</th>
+          <th class="text-center" style="width: 100px;">THAO TÁC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="v in filteredVouchers" :key="v.id" :class="{ 'row-selected': selectedVoucherIds.includes(v.id) }">
+          <td style="padding-left: 20px;">
+            <input type="checkbox" :checked="selectedVoucherIds.includes(v.id)" @change="toggleVoucherSelection(v.id)"
+              style="cursor: pointer; width: 16px; height: 16px;">
+          </td>
+          <td class="bold">{{ v.ma_voucher }}</td>
+          <td>
+            <div class="bold" style="color: #007AFF;">
+              {{ v.loai_giam_gia === 'phan_tram' ? v.gia_tri_giam + '%' : formatPrice(v.gia_tri_giam) }}
+            </div>
+            <div class="x-small dim" v-if="v.giam_toi_da">Tối đa {{ formatPrice(v.giam_toi_da) }}</div>
+          </td>
+          <td class="small">Đơn từ {{ formatPrice(v.don_hang_toi_thieu) }}</td>
+          <td class="small dim">{{ formatDate(v.ngay_het_han) }}</td>
+          <td class="small">{{ v.so_luong_con_lai }} lượt</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="mango-badge" :class="v.trang_thai">
+                {{
+                v.trang_thai === 'dang_hoat_dong' ? 'Hoạt động' :
+                v.trang_thai === 'tam_dung' ? 'Tạm dừng' :
+                v.trang_thai === 'het_han' ? 'Hết hạn' : 'Đã hủy'
+                }}
+              </span>
+              <button v-if="v.trang_thai === 'dang_hoat_dong'" class="action-btn-mini toggle-pause"
+                @click="toggleVoucherStatus(v.id, 'tam_dung')" title="Tạm dừng">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              </button>
+              <button v-else-if="v.trang_thai === 'tam_dung'" class="action-btn-mini toggle-activate"
+                @click="toggleVoucherStatus(v.id, 'dang_hoat_dong')" title="Kích hoạt">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </button>
+            </div>
+          </td>
+          <td class="text-center">
+            <div class="flex-center gap-8">
+              <button class="action-btn-mini" @click="openEditVoucherModal(v)" title="Sửa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path>
+                </svg>
+              </button>
+              <button class="action-btn-mini danger" @click="deleteVoucher(v.id)" title="Xóa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr v-if="filteredVouchers.length === 0">
+          <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
+            Chưa có mã giảm giá nào.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Voucher Modal -->
+  <div v-if="showVoucherModal" class="modal-overlay" @click.self="showVoucherModal = false">
+    <div class="modal product-modal" style="width: 520px;">
+      <div class="modal-title">{{ isEditingVoucher ? 'Sửa mã giảm giá' : 'Thêm mã giảm giá mới' }}</div>
+
+      <div class="admin-form" style="margin-top: 20px;">
+        <div class="form-group">
+          <label>Mã voucher *</label>
+          <input type="text" v-model="voucherForm.ma_voucher" class="mango-input" placeholder="VD: PEACH10" />
+        </div>
+
+        <div class="mango-grid grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>Loại giảm giá</label>
+            <select v-model="voucherForm.loai_giam_gia" class="mango-input">
+              <option value="phan_tram">Phần trăm (%)</option>
+              <option value="so_tien">Số tiền cố định</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Giá trị giảm *</label>
+            <input type="number" v-model.number="voucherForm.gia_tri_giam" class="mango-input" min="0" step="1000"
+              :placeholder="voucherForm.loai_giam_gia === 'phan_tram' ? 'VD: 10' : 'VD: 50000'" />
+          </div>
+        </div>
+
+        <div class="mango-grid grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>Giảm tối đa</label>
+            <input type="number" v-model.number="voucherForm.giam_toi_da" class="mango-input" min="0" step="1000"
+              placeholder="Trống = Không giới hạn" />
+          </div>
+          <div class="form-group">
+            <label>Đơn hàng tối thiểu</label>
+            <input type="number" v-model.number="voucherForm.don_hang_toi_thieu" class="mango-input" min="0" step="1000"
+              placeholder="0" />
+          </div>
+        </div>
+
+        <div class="mango-grid grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>Ngày hết hạn</label>
+            <input type="datetime-local" v-model="voucherForm.ngay_het_han" class="mango-input" />
+          </div>
+          <div class="form-group">
+            <label>Lượt dùng tối đa</label>
+            <input type="number" v-model.number="voucherForm.so_luong_con_lai" class="mango-input" min="1" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <select v-model="voucherForm.trang_thai" class="mango-input">
+            <option value="dang_hoat_dong">Đang hoạt động</option>
+            <option value="tam_dung">Tạm dừng</option>
+            <option value="het_han">Hết hạn</option>
+            <option value="da_huy">Đã hủy</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 32px;">
+        <button class="modal-btn cancel" @click="showVoucherModal = false">Hủy</button>
+        <button class="modal-btn confirm" @click="saveVoucher">
+          {{ isEditingVoucher ? 'Cập nhật' : 'Thêm mới' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

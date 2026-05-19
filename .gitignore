@@ -1,0 +1,42 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Build outputs
+dist/
+build/
+out/
+.nuxt/
+.next/
+
+# IDE and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Backend & Databases
+backend/env/
+backend/venv/
+backend/.env
+env/
+venv/
+.env
+.env.local
+.env.*.local
+db.sqlite3
+*.log
+__pycache__/
+*.pyc
+
+# Local project configs
+.kilocode/
+.qodo/

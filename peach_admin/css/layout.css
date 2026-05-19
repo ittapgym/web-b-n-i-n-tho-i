@@ -1,0 +1,18 @@
+/* Layout styles for Admin Desktop */
+.admin-main {
+  flex: 1;
+  padding: 40px;
+  margin-left: 260px;
+  transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-main.is-collapsed {
+  margin-left: 78px;
+}
+
+.admin-header {
+  margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

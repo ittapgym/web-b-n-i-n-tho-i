@@ -1,0 +1,266 @@
+<div v-if="activeTab === 'chat'" class="view-pane support-chat-view" style="padding: 0 !important; display: flex !important; flex-direction: column; height: calc(100vh - 110px); overflow: hidden; background: #f5f5f7; border-radius: 20px; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+   
+   <style>
+   /* Custom Scrollbar for Chat Customer List & Messages */
+   .support-chat-list::-webkit-scrollbar,
+   #adminChatContainer::-webkit-scrollbar {
+      width: 6px;
+   }
+   .support-chat-list::-webkit-scrollbar-track,
+   #adminChatContainer::-webkit-scrollbar-track {
+      background: transparent;
+   }
+   .support-chat-list::-webkit-scrollbar-thumb,
+   #adminChatContainer::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 10px;
+   }
+   .support-chat-list::-webkit-scrollbar-thumb:hover,
+   #adminChatContainer::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.16);
+   }
+
+   /* Premium Xcode-style card hover effects */
+   .customer-thread-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+   }
+   .customer-thread-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      border-color: rgba(0, 122, 255, 0.15) !important;
+   }
+
+   /* Pulse animation for premium look */
+   @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 8px 32px rgba(0,122,255,0.03); }
+      50% { transform: scale(1.03); box-shadow: 0 8px 32px rgba(0,122,255,0.08); }
+      100% { transform: scale(1); box-shadow: 0 8px 32px rgba(0,122,255,0.03); }
+   }
+   </style>
+   
+   <!-- Pane Header -->
+   <div class="pane-header mango-flex-between" style="padding: 20px 24px; background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.06); flex-shrink: 0; margin-bottom: 0;">
+      <div style="display: flex; align-items: center; gap: 10px; height: 100%;">
+         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" style="display: block;">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+         </svg>
+         <h1 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 !important; line-height: 1 !important; display: inline-flex; align-items: center;">Trò chuyện & CSKH Trực tuyến</h1>
+         <button v-if="chatPendingCount > 0" @click="markAllChatsAsProcessed"
+            style="background: rgba(52, 199, 89, 0.08) !important; color: #34C759 !important; border: 1.5px solid #34C759 !important; border-radius: 8px; font-weight: 700; font-size: 11px; padding: 4px 8px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; transition: all 0.2s; outline: none; margin-left: 8px; align-self: center;"
+            title="Đánh dấu đã trả lời/xử lý hết">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: block;">
+               <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span style="line-height: 1;">Xong tất cả ({{ chatPendingCount }})</span>
+         </button>
+      </div>
+   </div>
+
+   <!-- Two-Pane Dashboard Container -->
+   <div style="flex: 1; display: flex; overflow: hidden; min-height: 0; background: #ffffff;">
+      
+      <!-- Left Sidebar: Customer Threads -->
+      <div style="width: 300px; border-right: 1px solid rgba(0,0,0,0.08); background: #ffffff; display: flex; flex-direction: column; flex-shrink: 0; height: 100%;">
+         <!-- Search Bar inside left side -->
+         <div style="padding: 14px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+            <div class="search-box relative" style="width: 100%;">
+               <svg class="icon-search" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="left: 12px; top: 50%; transform: translateY(-50%);">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+               </svg>
+               <input 
+                  type="text" 
+                  v-model="customerFilterQuery" 
+                  placeholder="Tìm khách hàng cần chat..." 
+                  class="mango-input" 
+                  style="padding-left: 36px; height: 36px; font-size: 13px; border-radius: 8px; width: 100%; border: 1.5px solid rgba(0,0,0,0.05); outline: none;"
+               />
+            </div>
+         </div>
+
+         <!-- Scrollable Customer List -->
+         <div class="support-chat-list" style="flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; height: 100%;">
+            <div 
+               v-for="c in filteredCustomers" 
+               :key="c.id" 
+               @click="openAdminChatModal(c)"
+               class="customer-thread-card"
+               :style="{
+                  background: selectedChatCustomer?.id === c.id ? 'rgba(0, 122, 255, 0.08)' : 'transparent',
+                  borderColor: selectedChatCustomer?.id === c.id ? 'rgba(0,122,255,0.1)' : 'rgba(0,0,0,0.03)'
+               }"
+               style="padding: 10px 12px; border-radius: 10px; border: 1px solid; cursor: pointer; display: flex; align-items: center; gap: 10px;"
+            >
+               <!-- Avatar -->
+               <div v-if="c.hinh_anh" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(0,0,0,0.05); flex-shrink: 0;">
+                  <img :src="c.hinh_anh" style="width: 100%; height: 100%; object-fit: cover;" />
+               </div>
+               <div v-else :style="{ background: stringToColor(c.ho_ten || 'U') }" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 14px; flex-shrink: 0;">
+                  {{ (c.ho_ten || 'U').charAt(0) }}
+               </div>
+
+               <!-- Customer Details -->
+               <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                     <span style="font-size: 13px; font-weight: 700; color: #1d1d1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">{{ c.ho_ten }}</span>
+                     <!-- Red Dot if admin hasn't replied to last message -->
+                     <span v-if="unreadChatStates[c.id]" 
+                           style="width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; display: inline-block; flex-shrink: 0; box-shadow: 0 0 0 2px #ffffff;"
+                           title="Có tin nhắn mới chưa trả lời"
+                     ></span>
+                  </div>
+                  <span style="font-size: 11px; color: #86868b; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.email }}</span>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- Right Pane: Active Chat Log -->
+      <div style="flex: 1; display: flex; flex-direction: column; background: #f5f5f7; height: 100%; position: relative;">
+         
+         <template v-if="selectedChatCustomer">
+            <!-- Active Chat Header -->
+            <div style="background: #ffffff; padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;">
+               <div style="display: flex; align-items: center; gap: 10px;">
+                  <div v-if="selectedChatCustomer.hinh_anh" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(0,0,0,0.05);">
+                     <img :src="selectedChatCustomer.hinh_anh" style="width: 100%; height: 100%; object-fit: cover;" />
+                  </div>
+                  <div v-else :style="{ background: stringToColor(selectedChatCustomer.ho_ten || 'U') }" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 14px;">
+                     {{ (selectedChatCustomer.ho_ten || 'U').charAt(0) }}
+                  </div>
+                  <div>
+                     <span style="font-size: 13.5px; font-weight: 700; color: #1d1d1f; display: block;">{{ selectedChatCustomer.ho_ten }}</span>
+                     <span style="font-size: 11px; color: #86868b; display: block; margin-top: 1px;">{{ selectedChatCustomer.email }}</span>
+                  </div>
+               </div>
+               
+               <!-- Refresh & Actions -->
+               <button 
+                  @click="openAdminChatModal(selectedChatCustomer)" 
+                  style="background: rgba(0,122,255,0.08); border: none; border-radius: 8px; color: #007aff; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                  title="Tải lại cuộc trò chuyện"
+               >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                     <path d="M23 4v6h-6M1 20v-6h6"></path>
+                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  Tải lại tin nhắn
+               </button>
+            </div>
+
+            <!-- Chat Message History -->
+            <div id="adminChatContainer" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; min-height: 0;">
+               
+               <!-- Loading overlay -->
+               <div v-if="loadingAdminChat" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 8px;">
+                  <div style="width: 20px; height: 20px; border: 2px solid rgba(0,122,255,0.15); border-top-color: #007aff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                  <span style="font-size: 12px; color: #86868b;">Đang tải tin nhắn...</span>
+               </div>
+
+               <!-- Empty conversation -->
+               <div v-else-if="allAdminChatMessages.length === 0" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.8; gap: 12px; padding: 40px 0;">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(0,122,255,0.4)" stroke-width="1.5" style="margin-bottom: 4px;">
+                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <div style="text-align: center;">
+                     <div style="font-size: 14px; font-weight: 700; color: #1d1d1f;">Chưa có cuộc hội thoại</div>
+                     <div style="font-size: 12px; color: #86868b; margin-top: 4px;">Hãy bắt đầu gửi tin nhắn phản hồi dưới đây!</div>
+                  </div>
+               </div>
+
+               <!-- Chronological messages -->
+               <template v-else>
+                  <!-- Xem tin cũ hơn -->
+                  <div v-if="showAdminChatLoadPrevious" @click="loadAdminChatPreviousMessages" style="align-self: center; background: rgba(0, 122, 255, 0.08); color: #007aff; border: none; border-radius: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: all 0.2s; font-size: 11.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; user-select: none;" title="Xem tin cũ hơn">
+                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                     Xem 10 tin cũ hơn (còn {{ adminChatVisibleStartIdx }} tin)
+                  </div>
+
+                  <div v-for="msg in adminChatMessages" :key="msg.id" :style="{ alignSelf: msg.sender === 'admin' ? 'flex-end' : 'flex-start' }" style="max-width: 75%; display: flex; flex-direction: column;">
+                     <div :style="{ 
+                        backgroundColor: msg.sender === 'admin' ? '#007aff' : '#ffffff',
+                        color: msg.sender === 'admin' ? '#ffffff' : '#1d1d1f',
+                        borderRadius: msg.sender === 'admin' ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+                        padding: '10px 14px',
+                        fontSize: '13px',
+                        lineHeight: '1.45',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                        border: msg.sender === 'admin' ? 'none' : '1px solid rgba(0,0,0,0.06)'
+                     }">
+                        {{ msg.text }}
+                     </div>
+                     <span :style="{ alignSelf: msg.sender === 'admin' ? 'flex-end' : 'flex-start' }" style="font-size: 10px; color: #86868b; margin-top: 4px; margin-left: 4px; margin-right: 4px; font-weight: 500;">
+                        {{ msg.time }}
+                     </span>
+                  </div>
+
+                  <!-- Xem tin mới hơn -->
+                  <div v-if="showAdminChatLoadNext" @click="loadAdminChatNextMessages" style="align-self: center; background: rgba(0, 122, 255, 0.08); color: #007aff; border: none; border-radius: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; transition: all 0.2s; font-size: 11.5px; display: flex; align-items: center; gap: 6px; margin-top: 8px; user-select: none;" title="Xem tin mới hơn">
+                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                     Xem 10 tin mới hơn (còn {{ allAdminChatMessages.length - 10 - adminChatVisibleStartIdx }} tin)
+                  </div>
+               </template>
+            </div>
+
+            <!-- Bottom Reply Bar -->
+            <div style="background: #ffffff; padding: 14px 20px; border-top: 1px solid rgba(0,0,0,0.06); display: flex; gap: 12px; align-items: center; flex-shrink: 0; z-index: 10;">
+               <input 
+                  type="text" 
+                  v-model="adminChatInputText" 
+                  @keyup.enter="sendAdminChatMessage" 
+                  placeholder="Nhập nội dung phản hồi khách hàng..." 
+                  style="flex: 1; background: #f5f5f7; border: 1.5px solid rgba(0,0,0,0.01); outline: none; font-size: 13px; color: #1d1d1f; padding: 10px 14px; border-radius: 20px;"
+                  :disabled="loadingAdminChat"
+               />
+               <button 
+                  @click="sendAdminChatMessage" 
+                  :disabled="!adminChatInputText.trim() || loadingAdminChat"
+                  :style="{ 
+                     backgroundColor: adminChatInputText.trim() ? '#007aff' : '#e5e5ea',
+                     color: adminChatInputText.trim() ? '#ffffff' : '#86868b',
+                     cursor: adminChatInputText.trim() ? 'pointer' : 'not-allowed'
+                  }"
+                  style="border: none; border-radius: 10px; font-weight: 700; padding: 8px 16px; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,122,255,0.1);"
+               >
+                  Gửi tin
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                     <line x1="22" y1="2" x2="11" y2="13"></line>
+                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+               </button>
+            </div>
+         </template>
+
+         <!-- Unselected State -->
+         <div v-else style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; background: #ffffff;">
+            <div style="max-width: 420px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+               <!-- Modern Glassmorphic Chat Icon -->
+               <div style="width: 80px; height: 80px; border-radius: 24px; background: linear-gradient(135deg, rgba(0, 122, 255, 0.1), rgba(0, 122, 255, 0.03)); border: 1px solid rgba(0, 122, 255, 0.15); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 32px rgba(0,122,255,0.05); animation: pulse 3s infinite ease-in-out;">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2">
+                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                  </svg>
+               </div>
+               
+               <div>
+                  <h3 style="font-size: 16px; font-weight: 700; color: #1d1d1f; margin: 0 0 8px 0;">Hỗ trợ & Trò chuyện trực tuyến</h3>
+                  <p style="font-size: 13px; color: #86868b; line-height: 1.5; margin: 0;">
+                     Chào mừng bạn đến với kênh chăm sóc khách hàng của Peach Store. Vui lòng chọn một khách hàng ở danh sách bên trái để bắt đầu chat trực tiếp và hỗ trợ kịp thời.
+                  </p>
+               </div>
+               
+               <!-- Quick Stats Summary / Tips -->
+               <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; background: #f5f5f7; padding: 16px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.03); text-align: left;">
+                  <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Hướng dẫn nhanh</div>
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #1d1d1f; font-weight: 500;">
+                     <span style="color: #007aff;">•</span> Nhấp chọn khách hàng có tin nhắn mới ở thanh danh sách bên trái.
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #1d1d1f; font-weight: 500;">
+                     <span style="color: #34c759;">•</span> Nhập nội dung phản hồi và ấn Enter hoặc nút Gửi tin để trả lời tức thì.
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

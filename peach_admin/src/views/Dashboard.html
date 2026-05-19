@@ -1,0 +1,50 @@
+<div v-if="activeTab === 'dashboard'" class="view-pane dashboard-view">
+   <div class="pane-header mango-flex-between">
+      <div>
+         <h1>Chào mừng quay trở lại, Admin</h1>
+         <p class="dim">Hệ thống Mango đang vận hành ở trạng thái tối ưu.</p>
+      </div>
+
+   </div>
+
+   <div class="mango-grid grid-3" style="margin-bottom: 40px;">
+      <div class="stat-card">
+         <div class="stat-label">Tổng doanh thu cửa hàng</div>
+         <div class="stat-value" style="color: #34c759; margin-top: 8px;">{{ stats.revenue }}</div>
+         <div class="dim small" style="margin-top: 6px; font-style: italic; color: #28c840; opacity: 0.9; font-size: 12px; line-height: 1.4; word-break: break-word;">
+            ({{ stats.revenueInWords }})
+         </div>
+         <div class="stat-trend positive" style="margin-top: 12px;">↑ Doanh thu thực tế tích lũy</div>
+      </div>
+      <div class="stat-card">
+         <div class="stat-label">Tổng số đơn hàng</div>
+         <div class="stat-value" style="color: #ff9500; margin-top: 8px;">{{ stats.newOrders }}</div>
+         <div class="dim small" style="margin-top: 14px;">Tất cả giao dịch hệ thống</div>
+      </div>
+      <div class="stat-card">
+         <div class="stat-label">Khách hàng thành viên</div>
+         <div class="stat-value" style="color: #007aff; margin-top: 8px;">{{ stats.newCustomers }}</div>
+         <div class="stat-trend positive" style="margin-top: 14px;">↑ Tài khoản đã đăng ký</div>
+      </div>
+   </div>
+
+   <div class="section-title">HOẠT ĐỘNG GẦN ĐÂY</div>
+   <div class="table-wrapper mango-card">
+      <table class="xcode-table">
+         <thead>
+            <tr>
+               <th>THỜI GIAN</th>
+               <th>NHÂN VIÊN</th>
+               <th>THAO TÁC</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr v-for="act in activities" :key="act.time">
+               <td class="dim">{{ act.time }}</td>
+               <td class="bold">{{ act.user }}</td>
+               <td>{{ act.action }}</td>
+            </tr>
+         </tbody>
+      </table>
+   </div>
+</div>

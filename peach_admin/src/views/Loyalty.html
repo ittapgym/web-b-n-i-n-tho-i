@@ -1,0 +1,412 @@
+<div v-if="activeTab === 'loyalty'" class="view-pane loyalty-view" style="padding: 0 !important; display: flex !important; flex-direction: column; height: calc(100vh - 110px); overflow: hidden; background: #f5f5f7; border-radius: 20px; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+  
+  <style>
+  /* Scrollbars for loyalty sections */
+  .loyalty-scrollable-content::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .loyalty-scrollable-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .loyalty-scrollable-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+  }
+  .loyalty-scrollable-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.16);
+  }
+
+  /* Card and item animations */
+  .loyalty-tier-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .loyalty-tier-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  }
+
+  /* Xcode premium customer table row */
+  .loyalty-customer-row {
+    transition: all 0.2s ease;
+  }
+  .loyalty-customer-row:hover {
+    background-color: rgba(0, 122, 255, 0.02) !important;
+  }
+
+  /* Glassmorphic Modals */
+  .loyalty-glass-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: loyaltyFadeIn 0.2s ease-out;
+  }
+  .loyalty-modal-container {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    width: 480px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    animation: loyaltyScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes loyaltyFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes loyaltyScaleUp {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  </style>
+
+  <!-- Pane Header -->
+  <div class="pane-header mango-flex-between" style="padding: 20px 24px; background: #ffffff; border-bottom: 1px solid rgba(0,0,0,0.06); flex-shrink: 0; margin-bottom: 0;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9500" stroke-width="2.5">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+        <path d="M2 17l10 5 10-5"></path>
+        <path d="M2 12l10 5 10-5"></path>
+      </svg>
+      <div>
+        <h1 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0;">Tích điểm & Hạng thẻ</h1>
+        <p style="font-size: 12px; color: #86868b; margin: 2px 0 0 0;">Cấu hình ưu đãi đặc quyền theo từng hạng thành viên và cập nhật điểm tích lũy.</p>
+      </div>
+    </div>
+    <div style="font-size: 11px; font-weight: 700; color: #ff9500; background: rgba(255,149,0,0.08); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,149,0,0.12); display: flex; align-items: center; gap: 5px;">
+      <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ff9500; animation: pulse 1.5s infinite;"></span>
+      Áp dụng trực tiếp
+    </div>
+  </div>
+
+  <!-- Main Scrollable Body Content -->
+  <div class="loyalty-scrollable-content" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; min-height: 0;">
+    
+    <!-- Section 1: Membership Tiers Configuration Cards Grid -->
+    <div>
+      <h2 style="font-size: 14px; font-weight: 700; color: #1d1d1f; margin: 0 0 14px 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+        Đặc quyền & Ưu đãi các Hạng thẻ
+      </h2>
+      
+      <div style="display: flex; gap: 20px; align-items: stretch;">
+        <div v-for="level in loyaltyLevels" :key="level.id" class="loyalty-tier-card" style="border-top: 4px solid; flex: 1; display: flex; flex-direction: column;" :style="{ borderTopColor: level.color }">
+          <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1;">
+            
+            <!-- Tier Title & Color Indicator -->
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span :style="{ background: level.color }" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>
+                Hạng {{ level.ten_hang }}
+              </h3>
+              <span style="font-size: 11px; font-weight: 700; padding: 3px 6px; border-radius: 4px; color: #86868b; background: #f5f5f7;">
+                Giảm {{ level.phan_tram_giam }}%
+              </span>
+            </div>
+
+            <!-- Point Threshold badge -->
+            <div style="font-size: 12.5px; color: #86868b; display: flex; align-items: center; gap: 6px; background: #f5f5f7; padding: 8px 12px; border-radius: 8px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              Ngưỡng điểm: <strong style="color: #1d1d1f;">{{ level.diem_toi_thieu }}+ điểm</strong>
+            </div>
+
+            <!-- Tier Privileges checklist -->
+            <div style="flex: 1; min-height: 130px; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+              <div v-for="benefit in level.uu_dai_rieng" :key="benefit" style="display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: #48484a; line-height: 1.4;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#24b157" stroke-width="3" style="margin-top: 3px; flex-shrink: 0;">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ benefit }}</span>
+              </div>
+            </div>
+            
+            <!-- Edit Button -->
+            <button 
+              @click="openEditLoyaltyModal(level)"
+              class="action-btn"
+              style="margin-top: auto; background: rgba(0, 122, 255, 0.05); color: #007aff; border: 1px solid rgba(0, 122, 255, 0.1); width: 100%; border-radius: 8px; height: 34px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+              onmouseover="this.style.background='rgba(0, 122, 255, 0.1)'"
+              onmouseout="this.style.background='rgba(0, 122, 255, 0.05)'"
+            >
+              Cấu hình hạng
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Direct Accounts Points & Ranks Application List -->
+    <div>
+      <h2 style="font-size: 14px; font-weight: 700; color: #1d1d1f; margin: 0 0 14px 0; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        Danh sách Khách hàng & Phân Hạng Trực Tiếp
+      </h2>
+
+      <div style="background: #ffffff; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.02); overflow: hidden;">
+        <table class="xcode-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="background: #f5f5f7; border-bottom: 1px solid rgba(0,0,0,0.06);">
+              <th style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase;">Khách hàng</th>
+              <th style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; text-align: center;">Điểm Tích Lũy</th>
+              <th style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; text-align: center;">Hạng Thẻ Đang Áp Dụng</th>
+              <th style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; text-align: center;">Chiết khấu Mua Hàng</th>
+              <th style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; text-align: center;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="c in customers" :key="c.id" class="loyalty-customer-row" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+              
+              <!-- Customer Profile -->
+              <td style="padding: 14px 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 32px; height: 32px; border-radius: 50%; background: #e5e5ea; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #86868b; font-size: 12px;">
+                    {{ c.ho_ten ? c.ho_ten.charAt(0).toUpperCase() : 'C' }}
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-weight: 700; color: #1d1d1f; font-size: 13.5px;">{{ c.ho_ten || 'Khách hàng' }}</span>
+                    <span style="font-size: 11.5px; color: #86868b;">{{ c.email }}</span>
+                  </div>
+                </div>
+              </td>
+              
+              <!-- Accumulated Points -->
+              <td style="padding: 14px 20px; text-align: center;">
+                <span style="font-family: monospace; font-size: 14px; font-weight: 700; color: #ff9500; background: rgba(255,149,0,0.08); padding: 4px 8px; border-radius: 6px;">
+                  {{ c.diem_tich_luy || 0 }} điểm
+                </span>
+              </td>
+              
+              <!-- Membership Rank Dynamic Badge -->
+              <td style="padding: 14px 20px; text-align: center;">
+                <span 
+                  style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1.5px solid;" 
+                  :style="{ borderColor: getRankColor(c) + '22', color: getRankColor(c), background: getRankColor(c) + '08' }"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-top: -1px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  {{ getMembershipRank(c) }}
+                </span>
+              </td>
+              
+              <!-- Active Special Benefit Discount -->
+              <td style="padding: 14px 20px; text-align: center; font-size: 13px; font-weight: 600; color: #24b157;">
+                <span v-if="getMembershipRank(c) === 'Kim cương'">Giảm 10% đơn hàng</span>
+                <span v-else-if="getMembershipRank(c) === 'Vàng'">Giảm 5% đơn hàng</span>
+                <span style="color: #86868b;" v-else>Không giảm giá</span>
+              </td>
+              
+              <!-- Update points button -->
+              <td style="padding: 14px 20px; text-align: center;">
+                <button 
+                  @click="openEditPointsModal(c)"
+                  class="action-btn"
+                  style="background: #007aff; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                  onmouseover="this.style.background='#0062cc'"
+                  onmouseout="this.style.background='#007aff'"
+                >
+                  Cập nhật điểm
+                </button>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal 1: Edit Loyalty Rank Config -->
+  <div v-if="showLoyaltyModal" class="modal-overlay" @click.self="showLoyaltyModal = false">
+    <div class="modal product-modal" style="width: 500px; max-height: 90vh; overflow-y: auto;">
+      
+      <!-- Modal Header -->
+      <div class="modal-title">
+        Cấu hình hạng: {{ loyaltyForm.ten_hang }}
+      </div>
+
+      <!-- Modal Body Fields -->
+      <div class="admin-form">
+        
+        <!-- Points Threshold input -->
+        <div class="form-group">
+          <label class="stat-label">NGƯỠNG ĐIỂM TỐI THIỂU <span style="color: #FF3B30;">*</span></label>
+          <input 
+            type="number" 
+            v-model="loyaltyForm.diem_toi_thieu"
+            class="mango-input"
+            placeholder="e.g. 1000"
+            min="0"
+            max="100000000"
+          />
+          <div style="font-size: 11px; color: #86868b; margin-top: 4px;">Ngưỡng tối đa: 100,000,000 điểm</div>
+        </div>
+
+        <!-- Discount percentage input -->
+        <div class="form-group">
+          <label class="stat-label">PHẦN TRĂM GIẢM GIÁ (%) <span style="color: #FF3B30;">*</span></label>
+          <input 
+            type="number" 
+            step="0.5"
+            v-model="loyaltyForm.phan_tram_giam"
+            class="mango-input"
+            placeholder="e.g. 5"
+            min="0"
+            max="100"
+          />
+          <div style="font-size: 11px; color: #86868b; margin-top: 4px;">Giảm giá tối đa: 100%</div>
+        </div>
+
+        <!-- Privilege list input (interactive checklist) -->
+        <div class="form-group">
+          <label class="stat-label">DANH SÁCH ĐẶC QUYỀN HẠNG THẺ <span style="color: #FF3B30;">*</span></label>
+          <div style="display: flex; flex-direction: column; gap: 10px; background: #f5f5f7; padding: 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04); max-height: 180px; overflow-y: auto;">
+            
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Tích điểm mua sắm')" @change="togglePrivilege('Tích điểm mua sắm')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Tích điểm mua sắm
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Hỗ trợ tiêu chuẩn')" @change="togglePrivilege('Hỗ trợ tiêu chuẩn')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Hỗ trợ tiêu chuẩn
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Hỗ trợ ưu tiên')" @change="togglePrivilege('Hỗ trợ ưu tiên')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Hỗ trợ ưu tiên
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Đặc quyền Hỗ trợ VIP 24/7')" @change="togglePrivilege('Đặc quyền Hỗ trợ VIP 24/7')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Đặc quyền Hỗ trợ VIP 24/7
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Miễn phí vận chuyển mọi đơn hàng')" @change="togglePrivilege('Miễn phí vận chuyển mọi đơn hàng')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Miễn phí vận chuyển mọi đơn hàng
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Quà tặng sinh nhật đặc biệt')" @change="togglePrivilege('Quà tặng sinh nhật đặc biệt')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Quà tặng sinh nhật đặc biệt
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Trải nghiệm sớm sản phẩm mới')" @change="togglePrivilege('Trải nghiệm sớm sản phẩm mới')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Trải nghiệm sớm sản phẩm mới
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; user-select: none;">
+              <input type="checkbox" :checked="hasPrivilege('Đổi trả hàng trong 30 ngày')" @change="togglePrivilege('Đổi trả hàng trong 30 ngày')" style="width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;" />
+              Đổi trả hàng kéo dài (30 ngày)
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Color input -->
+        <div class="form-group">
+          <label class="stat-label">MÀU SẮC NHẬN DIỆN THƯƠNG HIỆU HẠNG THẺ <span style="color: #FF3B30;">*</span></label>
+          
+          <!-- Suggested colors -->
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 10px; font-weight: 700; color: #86868b; text-transform: uppercase;">Gợi ý màu:</span>
+            <span @click="loyaltyForm.color = '#8e8e93'" style="width: 18px; height: 18px; border-radius: 50%; background: #8e8e93; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15);" title="Bạc"></span>
+            <span @click="loyaltyForm.color = '#ffcc00'" style="width: 18px; height: 18px; border-radius: 50%; background: #ffcc00; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15);" title="Vàng"></span>
+            <span @click="loyaltyForm.color = '#007aff'" style="width: 18px; height: 18px; border-radius: 50%; background: #007aff; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15);" title="Kim cương"></span>
+            <span @click="loyaltyForm.color = '#ff3b30'" style="width: 18px; height: 18px; border-radius: 50%; background: #ff3b30; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15);" title="Đỏ"></span>
+            <span @click="loyaltyForm.color = '#24b157'" style="width: 18px; height: 18px; border-radius: 50%; background: #24b157; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15);" title="Xanh lá"></span>
+            <span @click="loyaltyForm.color = '#1c1c1e'" style="width: 18px; height: 18px; border-radius: 50%; background: #1c1c1e; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15);" title="Đen"></span>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input 
+              type="color" 
+              v-model="loyaltyForm.color"
+              style="width: 44px; height: 44px; border: none; padding: 0; cursor: pointer; border-radius: 8px; background: transparent;"
+            >
+            <input 
+              type="text"
+              v-model="loyaltyForm.color"
+              class="mango-input"
+              style="font-family: monospace; height: 44px;"
+            >
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="modal-actions">
+        <button class="modal-btn cancel" @click="showLoyaltyModal = false">Hủy bỏ</button>
+        <button class="modal-btn confirm" @click="saveLoyaltyConfig">Lưu thay đổi</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: Adjust Customer Points directly -->
+  <div v-if="showPointsModal" class="modal-overlay" @click.self="showPointsModal = false">
+    <div class="modal product-modal" style="width: 480px; max-height: 90vh; overflow-y: auto;">
+      
+      <!-- Modal Header -->
+      <div class="modal-title">
+        Cập nhật điểm khách hàng
+      </div>
+
+      <!-- Modal Body -->
+      <div class="admin-form">
+        
+        <!-- Customer Info label -->
+        <div class="form-group" style="background: #f5f5f7; padding: 14px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 10px; font-weight: 700; color: #86868b; text-transform: uppercase;">Khách hàng điều chỉnh</span>
+          <span style="font-size: 15px; font-weight: 700; color: #1d1d1f;">{{ pointsForm.customerName }}</span>
+        </div>
+
+        <!-- Points input field -->
+        <div class="form-group" style="margin-top: 16px;">
+          <label class="stat-label">TỔNG ĐIỂM TÍCH LŨY MỚI <span style="color: #FF3B30;">*</span></label>
+          <input 
+            type="number" 
+            v-model="pointsForm.diem_tich_luy"
+            class="mango-input"
+            placeholder="e.g. 2500"
+            min="0"
+            max="100000000"
+          >
+          <div style="font-size: 11px; color: #86868b; margin-top: 4px;">Điểm tích lũy tối đa: 100,000,000 điểm</div>
+          <p style="font-size: 11.5px; color: #86868b; margin-top: 6px; line-height: 1.4;">Lưu ý: Hạng thành viên và ưu đãi chiết khấu sẽ được tự động tính toán lại dựa trên cấu hình hạng.</p>
+        </div>
+
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="modal-actions">
+        <button class="modal-btn cancel" @click="showPointsModal = false">Hủy bỏ</button>
+        <button class="modal-btn confirm" @click="saveCustomerPoints" style="background: #ff9500; border-color: #ff9500;">Áp dụng trực tiếp</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

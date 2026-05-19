@@ -1,0 +1,136 @@
+<div v-if="activeTab === 'shipping'" class="view-pane shipping-view">
+  <div class="pane-header mango-flex-between">
+    <h1>Vận chuyển & Phí ship</h1>
+    <div class="flex-gap-12 flex-center-h">
+      <!-- Bulk Delete Button -->
+      <button v-if="selectedShippingIds.length > 0" class="action-btn danger" @click="deleteSelectedShipping"
+        style="background: #FF3B30 !important; color: white !important; border: none !important; border-radius: 12px !important;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          style="margin-right: 6px;">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Xóa {{ selectedShippingIds.length }} đơn vị đã chọn
+      </button>
+
+      <button class="action-btn icon-btn primary" @click="openAddShippingModal" title="+ Thêm đơn vị">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper mango-card">
+    <table class="xcode-table">
+      <thead>
+        <tr>
+          <th style="width: 40px; padding-left: 20px;">
+            <input type="checkbox" :checked="selectedShippingIds.length === shippingUnits.length && shippingUnits.length > 0"
+              @change="toggleSelectAllShipping" style="cursor: pointer; width: 16px; height: 16px;">
+          </th>
+          <th>ĐƠN VỊ VẬN CHUYỂN</th>
+          <th>MÃ ĐƠN VỊ</th>
+          <th>PHÍ CƠ BẢN</th>
+          <th>MIỄN PHÍ KHI</th>
+          <th>DỰ KIẾN</th>
+          <th>TRẠNG THÁI</th>
+          <th class="text-center" style="width: 100px;">THAO TÁC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="s in shippingUnits" :key="s.id" :class="{ 'row-selected': selectedShippingIds.includes(s.id) }">
+          <td style="padding-left: 20px;">
+            <input type="checkbox" :checked="selectedShippingIds.includes(s.id)"
+              @change="toggleShippingSelection(s.id)" style="cursor: pointer; width: 16px; height: 16px;">
+          </td>
+          <td class="bold">{{ s.ten_don_vi }}</td>
+          <td class="dim small">{{ s.ma_don_vi }}</td>
+          <td class="bold">{{ formatPrice(s.phi_co_dinh) }}</td>
+          <td class="dim">{{ s.nguong_mien_phi > 0 ? formatPrice(s.nguong_mien_phi) : '—' }}</td>
+          <td class="dim">{{ s.thoi_gian_du_kien }}</td>
+          <td>
+            <span class="mango-badge" :class="s.kich_hoat ? 'dang_hoat_dong' : 'da_huy'">
+              {{ s.kich_hoat ? 'Đang hoạt động' : 'Đã tắt' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="flex-center gap-8">
+              <button class="action-btn-mini" @click="openEditShippingModal(s)" title="Sửa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path>
+                </svg>
+              </button>
+              <button class="action-btn-mini danger" @click="deleteShippingUnit(s.id)" title="Xóa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr v-if="shippingUnits.length === 0">
+          <td colspan="8" style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
+            Chưa có đơn vị vận chuyển nào.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Shipping Modal -->
+  <div v-if="showShippingModal" class="modal-overlay" @click.self="showShippingModal = false">
+    <div class="modal product-modal" style="width: 520px;">
+      <div class="modal-title">{{ isEditingShipping ? 'Sửa đơn vị vận chuyển' : 'Thêm đơn vị vận chuyển' }}</div>
+      
+      <div class="admin-form" style="margin-top: 20px;">
+        <div class="form-group">
+          <label>Tên đơn vị *</label>
+          <input type="text" v-model="shippingForm.ten_don_vi" class="mango-input" placeholder="VD: Giao Hàng Nhanh" />
+        </div>
+        <div class="form-group">
+          <label>Mã đơn vị *</label>
+          <input type="text" v-model="shippingForm.ma_don_vi" class="mango-input" placeholder="VD: ghn" />
+        </div>
+        <div class="mango-grid grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>Phí cố định</label>
+            <input type="number" v-model.number="shippingForm.phi_co_dinh" class="mango-input" min="0" step="1000" />
+          </div>
+          <div class="form-group">
+            <label>Miễn phí khi đơn ≥</label>
+            <input type="number" v-model.number="shippingForm.nguong_mien_phi" class="mango-input" min="0" step="1000"
+              placeholder="0 = không miễn" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Thời gian dự kiến</label>
+          <input type="text" v-model="shippingForm.thoi_gian_du_kien" class="mango-input" placeholder="VD: 2-3 ngày" />
+        </div>
+        <div class="form-group">
+          <label>Mô tả</label>
+          <textarea v-model="shippingForm.mo_ta" class="mango-input" rows="2" placeholder="Mô tả ngắn..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Kích hoạt</label>
+          <div style="margin-top: 8px;">
+            <label class="ios-switch">
+              <input type="checkbox" v-model="shippingForm.kich_hoat">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 32px;">
+        <button class="modal-btn cancel" @click="showShippingModal = false">Hủy</button>
+        <button class="modal-btn confirm" @click="saveShippingUnit">
+          {{ isEditingShipping ? 'Cập nhật' : 'Thêm mới' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

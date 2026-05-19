@@ -1,0 +1,208 @@
+<div v-if="activeTab === 'stats'" class="view-pane analytics-view">
+   <div class="pane-header mango-flex-between">
+      <div>
+         <h1>Phân tích kinh doanh</h1>
+         <p class="dim">Theo dõi doanh thu (VNĐ) và chi phí vận hành AI (USD)</p>
+      </div>
+      <div class="flex-gap-12 flex-center-h">
+         <!-- View Mode Switcher -->
+         <select v-model="analyticsTab" class="mango-select-mini" style="width: 140px; font-weight: 600;">
+            <option value="business">Kinh doanh</option>
+            <option value="ai">Hiệu suất AI</option>
+         </select>
+
+         <!-- Time Filter -->
+         <select v-model="revenueViewMode" class="mango-select-mini" style="font-weight: 600; width: 220px;">
+            <option value="month">Xem theo Tuần (Tháng 05)</option>
+            <option value="day">Xem theo Ngày (7 ngày gần nhất)</option>
+         </select>
+
+         <button class="action-btn primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Xuất báo cáo
+         </button>
+      </div>
+   </div>
+
+   <!-- Tab 1: Business Overview -->
+   <div v-if="analyticsTab === 'business'" class="tab-content-pane">
+      <div class="mango-grid grid-2 margin-bottom-32">
+         <div class="stat-card">
+            <div class="stat-title">TỔNG DOANH THU</div>
+            <div class="stat-value" style="color: #28c840;">{{ formatPrice(analyticsData.summary.totalRevenue) }}</div>
+            <div class="dim small" style="margin-top: 6px; font-style: italic; color: #28c840; opacity: 0.9; font-size: 12px; line-height: 1.4; word-break: break-word;">
+               ({{ docSoTien(analyticsData.summary.totalRevenue) }})
+            </div>
+            <div class="stat-trend up" style="margin-top: 12px;">↑ 12.5% VNĐ</div>
+         </div>
+         <div class="stat-card">
+            <div class="stat-title">CHI PHÍ VẬN HÀNH</div>
+            <div class="stat-value text-amber">${{ analyticsData.summary.totalExpenses.toFixed(2) }}</div>
+            <div class="stat-trend">Bao gồm chi phí API AI</div>
+         </div>
+      </div>
+
+      <div class="mango-grid grid-2">
+         <!-- Revenue Chart -->
+         <div class="mango-card padding-24">
+            <div class="flex-between margin-bottom-20">
+               <div class="bold">Biến động doanh thu (Triệu VNĐ)</div>
+               <span class="dim small">VNĐ (Peach Revenue)</span>
+            </div>
+            <div class="chart-container"
+               style="height: 200px; display: flex; align-items: flex-end; gap: 12px; padding-bottom: 20px;">
+               <div v-for="(v, i) in analyticsData.revenueChart" :key="i" class="chart-bar-blue"
+                  :style="{ height: (Math.max(...analyticsData.revenueChart) > 0 ? (v / Math.max(...analyticsData.revenueChart) * 85) : 0) + '%', flex: 1, background: 'linear-gradient(180deg, #007AFF 0%, #5856D6 100%)', borderRadius: '6px 6px 0 0', position: 'relative' }">
+                  <div class="bar-label"
+                     style="position: absolute; top: -20px; width: 100%; text-align: center; font-size: 10px; font-weight: 700; color: var(--accent);">
+                     {{ v }}M</div>
+               </div>
+            </div>
+            <div class="flex-between dim x-small border-top-light padding-top-8" style="display: flex; justify-content: space-between; width: 100%;">
+               <span v-for="lbl in analyticsData.revenueChartLabels" :key="lbl" style="flex: 1; text-align: center; font-weight: 600;">{{ lbl }}</span>
+            </div>
+         </div>
+
+         <!-- Top Selling Products -->
+         <div class="mango-card padding-24">
+            <div class="bold margin-bottom-20 uppercase small">Sản phẩm bán chạy</div>
+            <div v-for="p in analyticsData.topProducts" :key="p.name"
+               class="flex-between padding-v-12 border-bottom-light">
+               <div class="flex-center-h gap-12">
+                  <div class="avatar-mini"
+                     :style="{ background: stringToColor(p.name), width: '24px', height: '24px', fontSize: '10px' }">
+                     {{ p.name.charAt(0) }}
+                  </div>
+                  <span class="bold">{{ p.name }}</span>
+               </div>
+               <div class="text-right">
+                  <span class="bold accent">{{ p.sales }} đơn</span>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Tab 2: AI Performance -->
+   <div v-if="analyticsTab === 'ai'" class="tab-content-pane">
+      <div class="mango-grid grid-2 margin-bottom-24">
+         <div class="stat-card">
+            <div class="stat-title">TOKENS ĐẦU VÀO</div>
+            <div class="stat-value small text-accent">{{ formatTokens(analyticsData.summary.inputTokens) }}</div>
+            <div class="stat-trend dim">Dữ liệu đầu vào</div>
+         </div>
+         <div class="stat-card">
+            <div class="stat-title">TOKENS ĐẦU RA</div>
+            <div class="stat-value small text-blue-light">{{ formatTokens(analyticsData.summary.outputTokens) }}</div>
+            <div class="stat-trend dim">Dữ liệu trả về</div>
+         </div>
+      </div>
+
+      <div class="mango-grid grid-2">
+         <!-- API Requests Chart -->
+         <div class="mango-card padding-24">
+            <div class="flex-between margin-bottom-12">
+               <div class="small bold uppercase dim">YÊU CẦU API</div>
+               <div class="bold">{{ analyticsData.summary.apiRequests }}</div>
+            </div>
+            <div class="chart-container" style="height: 120px; position: relative;">
+               <svg width="100%" height="100%" viewBox="0 0 400 100" preserveAspectRatio="none">
+                  <!-- Dynamic Area Fill -->
+                  <polygon :points="requestsSvgAreaPoints" fill="rgba(0, 122, 255, 0.12)"></polygon>
+                  <!-- Dynamic Line stroke -->
+                  <polyline :points="requestsSvgPoints" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+               </svg>
+            </div>
+         </div>
+
+         <!-- Tokens Breakdown -->
+         <div class="mango-card padding-24">
+            <div class="flex-between margin-bottom-12">
+               <div class="small bold uppercase dim">CHI TIẾT TIÊU THỤ TOKENS</div>
+               <div class="bold">{{ (analyticsData.summary.tokensUsage).toLocaleString() }}</div>
+            </div>
+            <div class="chart-container" style="height: 120px; display: flex; align-items: flex-end; gap: 8px;">
+               <div v-for="(v, i) in analyticsData.tokensChart" :key="i"
+                  :style="{ height: (Math.max(...analyticsData.tokensChart) > 0 ? (v / Math.max(...analyticsData.tokensChart) * 85) : 0) + '%', flex: 1, background: 'linear-gradient(180deg, #007AFF 0%, #30B0C7 100%)', borderRadius: '3px 3px 0 0', position: 'relative' }">
+                  <div style="position: absolute; top: -16px; width: 100%; text-align: center; font-size: 8px; font-weight: 700; color: var(--accent);">
+                     {{ formatTokens(v * 1000000) }}
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- Models Usage Table -->
+      <div class="mango-card padding-24 margin-top-24">
+         <div class="bold margin-bottom-20 uppercase small">Phân tích Model AI</div>
+         <table class="xcode-table analytics-model-table">
+            <thead>
+               <tr>
+                  <th>MÔ HÌNH AI</th>
+                  <th>SỐ YÊU CẦU</th>
+                  <th>LƯỢNG TOKENS</th>
+                  <th>CHI PHÍ (USD)</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr v-for="m in analyticsData.modelUsage" :key="m.name">
+                  <td class="bold">{{ m.name }}</td>
+                  <td>{{ m.requests }}</td>
+                  <td class="dim">{{ m.tokens }}</td>
+                  <td class="bold text-amber">${{ m.cost }}</td>
+               </tr>
+            </tbody>
+         </table>
+      </div>
+   </div>
+</div>
+
+<style>
+.analytics-view {
+  min-width: 1050px !important;
+  display: block;
+}
+
+/* Enable super-smooth horizontal scrolling on the main admin viewport */
+.main-view {
+  overflow-x: auto !important;
+}
+
+/* Beautiful iOS/Xcode Rounded & Centered Table */
+.analytics-model-table {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.analytics-model-table th, 
+.analytics-model-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+
+.analytics-model-table th {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  font-weight: 700 !important;
+  color: var(--accent) !important;
+}
+
+.analytics-model-table th:last-child, 
+.analytics-model-table td:last-child {
+  border-right: none !important;
+}
+
+.analytics-model-table tr:last-child td {
+  border-bottom: none !important;
+}
+</style>
+
+

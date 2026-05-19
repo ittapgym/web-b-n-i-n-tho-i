@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peach Admin - Phiên bản Xcode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css?v=peach_scroll_v99">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+
+<body class="xcode-theme">
+  <!-- Dynamic Background -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div id="admin-app" class="xcode-container no-transition" :class="{ 'is-maximized': isMaximized }" v-cloak>
+    <!-- Notification Container -->
+    <div class="toast-container">
+      <transition-group name="toast-fade">
+        <div v-for="n in notifications" :key="n.id" class="toast">
+          <div class="toast-icon" v-html="n.icon"></div>
+          <div class="toast-content">
+            <div class="toast-title">{{ n.title }}</div>
+            <div class="toast-message">{{ n.message }}</div>
+          </div>
+        </div>
+      </transition-group>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div v-if="modal.show" class="modal-overlay" @click.self="modal.show = false">
+      <div class="modal">
+        <div class="modal-icon" v-html="modal.icon"></div>
+        <div class="modal-title">{{ modal.title }}</div>
+        <div class="modal-message">{{ modal.message }}</div>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" @click="modal.show = false">Hủy bỏ</button>
+          <button class="modal-btn confirm" @click="confirmModal">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+    <!-- Order Detail Modal -->
+    <!-- Order Detail Modal -->
+    <div v-if="selectedOrder" class="modal-overlay" @click.self="selectedOrder = null">
+      <div class="modal order-detail-modal"
+        style="width: 760px; max-width: 95%; max-height: 90vh; overflow-y: auto; padding: 24px 32px; text-align: left; border-radius: 24px;">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid rgba(0, 0, 0, 0.05); padding-bottom: 12px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px;">
+              Chi tiết đơn hàng
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 32px; font-weight: 800; color: #1d1d1f; letter-spacing: -1px;">#{{ selectedOrder.id }}</span>
+              <span :style="{
+                backgroundColor: selectedOrder.status === 'cho_duyet' ? 'rgba(240, 140, 0, 0.1)' : 
+                                 selectedOrder.status === 'da_duyet' ? 'rgba(34, 139, 230, 0.1)' : 
+                                 selectedOrder.status === 'dang_giao' ? 'rgba(121, 80, 242, 0.1)' : 
+                                 selectedOrder.status === 'hoan_thanh' ? 'rgba(64, 192, 87, 0.1)' : 'rgba(250, 82, 82, 0.1)',
+                color: selectedOrder.status === 'cho_duyet' ? '#F08C00' : 
+                       selectedOrder.status === 'da_duyet' ? '#228BE6' : 
+                       selectedOrder.status === 'dang_giao' ? '#7950F2' : 
+                       selectedOrder.status === 'hoan_thanh' ? '#40C057' : '#FA5252'
+              }" style="padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                {{ selectedOrder.status === 'cho_duyet' ? 'Chờ duyệt' : 
+                   selectedOrder.status === 'da_duyet' ? 'Đã duyệt' : 
+                   selectedOrder.status === 'dang_giao' ? 'Đang giao' : 
+                   selectedOrder.status === 'hoan_thanh' ? 'Hoàn thành' : 'Đã hủy' }}
+              </span>
+            </div>
+          </div>
+          <button @click="selectedOrder = null"
+            style="background: rgba(0,0,0,0.04); border: none; cursor: pointer; color: #86868b; padding: 8px; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Section 1: Customer & Logistics -->
+        <div class="mango-grid grid-3-to-1" style="border-bottom: 1px solid rgba(0, 0, 0, 0.05); margin-bottom: 20px; padding-bottom: 20px; gap: 20px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Khách hàng</div>
+            <div style="font-size: 15px; font-weight: 700; color: #1d1d1f;">{{ selectedOrder.customer }}</div>
+            <div style="font-size: 13px; color: #86868b; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              {{ selectedOrder.phone }}
+            </div>
+            <div style="font-size: 12px; color: #34c759; margin-top: 6px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #34c759; display: inline-block;"></span>
+              Tài khoản đã xác minh
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Thanh toán</div>
+            <div style="font-size: 14px; font-weight: 700; color: #1d1d1f;">{{ selectedOrder.paymentMethod }}</div>
+            <div style="margin-top: 8px;">
+              <span :style="{
+                backgroundColor: selectedOrder.status === 'cho_duyet' ? 'rgba(255, 149, 0, 0.1)' : 'rgba(52, 199, 89, 0.1)',
+                color: selectedOrder.status === 'cho_duyet' ? '#FF9500' : '#34C759'
+              }" style="padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;">
+                {{ selectedOrder.status === 'cho_duyet' ? 'Chờ thanh toán' : 'Đã thanh toán' }}
+              </span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Giao hàng</div>
+            <div style="font-size: 13px; line-height: 1.6; color: #1d1d1f; font-weight: 600;">{{ selectedOrder.address }}</div>
+            <div style="font-size: 12px; color: #86868b; margin-top: 6px;">
+              Vận chuyển: <span style="font-weight: 700; color: #007aff;">{{ selectedOrder.shippingMethod || 'Giao hàng nhanh' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Line Items -->
+        <div style="margin-bottom: 20px;">
+          <div style="font-size: 11px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Danh sách sản phẩm</div>
+          
+          <div style="max-height: 180px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 10px;">
+            <div v-for="item in selectedOrder.items" :key="item.name"
+              style="display: flex; align-items: center; padding: 12px 16px; background: rgba(0,0,0,0.02); border-radius: 14px; border: 1px solid rgba(0,0,0,0.04); transition: all 0.2s;">
+              <div style="width: 60px; height: 60px; border-radius: 10px; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,0.05); flex-shrink: 0;">
+                <img :src="item.image" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+              <div style="flex: 1; padding-left: 16px;">
+                <div style="font-size: 14px; font-weight: 700; color: #1d1d1f;">{{ item.name }}</div>
+                
+                <!-- Product Specs (RAM, Storage, Color) -->
+                <div style="display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
+                  <!-- Color Spec -->
+                  <span v-if="item.mau_sac" class="x-small bold uppercase" 
+                        style="background: rgba(0, 122, 255, 0.06); padding: 3px 8px; border-radius: 6px; color: #007aff; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700;">
+                    <span v-if="item.mau_sac.startsWith('#') || /^[0-9a-fA-F]{6}$/.test(item.mau_sac.replace('#',''))" 
+                          :style="{ backgroundColor: item.mau_sac.startsWith('#') ? item.mau_sac : '#' + item.mau_sac }" 
+                          style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; border: 0.5px solid rgba(0,0,0,0.15);"></span>
+                    Màu: {{ item.mau_sac }}
+                  </span>
+                  
+                  <!-- Storage Spec -->
+                  <span v-if="item.dung_luong" class="x-small bold uppercase" 
+                        style="background: rgba(134, 134, 139, 0.08); padding: 3px 8px; border-radius: 6px; color: #1d1d1f; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                    💾 {{ item.dung_luong }}
+                  </span>
+                  
+                  <!-- RAM Spec -->
+                  <span v-if="item.ram" class="x-small bold uppercase" 
+                        style="background: rgba(52, 199, 89, 0.08); padding: 3px 8px; border-radius: 6px; color: #24c14c; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                    ⚡ RAM: {{ item.ram }}
+                  </span>
+                </div>
+                
+                <div style="font-size: 12px; color: #86868b; margin-top: 6px; font-weight: 600;">Số lượng: {{ item.qty }}</div>
+              </div>
+              <div style="font-size: 15px; font-weight: 700; color: #1d1d1f; text-align: right;">
+                {{ formatPrice(item.price) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Financials -->
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 16px;">
+          <div style="width: 280px;">
+            <div class="flex-between margin-bottom-8" style="font-size: 13px; color: #86868b;">
+              <span>Tạm tính</span>
+              <span style="font-weight: 600; color: #1d1d1f;">{{ formatPrice(selectedOrder.total + (selectedOrder.voucherDiscount || 0) - (selectedOrder.shippingFee || 0)) }}</span>
+            </div>
+            <div class="flex-between margin-bottom-8" style="font-size: 13px; color: #86868b;">
+              <span>Phí vận chuyển</span>
+              <span v-if="selectedOrder.shippingFee > 0" style="font-weight: 600; color: #1d1d1f;">{{ formatPrice(selectedOrder.shippingFee) }}</span>
+              <span v-else style="font-weight: 700; color: #34C759; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">Miễn phí</span>
+            </div>
+            <div v-if="selectedOrder.voucherDiscount > 0" class="flex-between margin-bottom-12" style="font-size: 13px; color: #FF3B30;">
+              <span>Voucher giảm giá</span>
+              <span style="font-weight: 700;">-{{ formatPrice(selectedOrder.voucherDiscount) }}</span>
+            </div>
+            <div class="flex-between" style="border-top: 1.5px solid #1d1d1f; padding-top: 16px; margin-top: 8px;">
+              <span style="font-size: 11px; font-weight: 800; color: #1d1d1f; letter-spacing: 1px; text-transform: uppercase;">Tổng cộng</span>
+              <span style="font-size: 24px; font-weight: 800; color: #1d1d1f; letter-spacing: -0.5px;">{{ formatPrice(selectedOrder.total) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 16px;">
+          <button @click="selectedOrder = null"
+            style="background: #1d1d1f; color: #fff; border: none; padding: 12px 32px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"
+            onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            ĐÓNG
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <header class="global-toolbar">
+      <div class="traffic-lights">
+        <span class="light red" @click="closeWindow" title="Đóng"></span>
+        <span class="light yellow" @click="minimizeWindow" title="Thu nhỏ"></span>
+        <span class="light green" @click="maximizeWindow" title="Phóng to"></span>
+        <button class="nav-refresh-btn" @click="reloadApp" title="Làm mới dữ liệu">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"></path>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="window-title">Peach Admin</div>
+      <div class="toolbar-right">
+        <button class="toolbar-btn" @click="isChatVisible = !isChatVisible" title="Đóng/Mở Trợ lý AI">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="15" y1="3" x2="15" y2="21"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace-body">
+      <!-- Sidebar (Navigator) -->
+      <aside class="sidebar" :class="{ collapsed: isSidebarCollapsed }">
+        <nav class="sidebar-nav">
+          <div class="nav-group">
+            <div class="nav-group-title">{{ t('group_overview') }}</div>
+            <div class="nav-item" :class="{ active: activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <rect x="3" y="3" width="7" height="9"></rect>
+                  <rect x="14" y="3" width="7" height="5"></rect>
+                  <rect x="14" y="12" width="7" height="9"></rect>
+                  <rect x="3" y="16" width="7" height="5"></rect>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_dashboard') }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_analytics') }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'ai' }" @click="activeTab = 'ai'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                  <path d="M12 2a10 10 0 0 1 10 10h-10V2z"></path>
+                  <path d="M12 12L2.5 4.5"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_chat_history') }}</span>
+            </div>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-title">{{ t('group_inventory') }}</div>
+            <div class="nav-item" :class="{ active: activeTab === 'products' }" @click="activeTab = 'products'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                  </path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_products') }}</span>
+            </div>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-title">{{ t('group_sales') }}</div>
+            <div class="nav-item" :class="{ active: activeTab === 'orders' }" @click="activeTab = 'orders'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_orders') }}</span>
+              <span v-if="ordersPendingCount > 0" class="nav-badge">{{ ordersPendingCount }}</span>
+            </div>
+
+            <div class="nav-item" :class="{ active: activeTab === 'coupons' }" @click="activeTab = 'coupons'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_vouchers') }}</span>
+            </div>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-title">{{ t('group_customers') }}</div>
+            <div class="nav-item" :class="{ active: activeTab === 'customers' }" @click="activeTab = 'customers'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_customers') }}</span>
+              <span v-if="customersPendingCount > 0" class="nav-badge">{{ customersPendingCount }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'loyalty' }" @click="activeTab = 'loyalty'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                  </path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_loyalty') }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'notifications' }"
+              @click="activeTab = 'notifications'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_push') }}</span>
+            </div>
+
+            <div class="nav-item" :class="{ active: activeTab === 'chat' }" @click="activeTab = 'chat'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_chat') }}</span>
+              <span v-if="chatPendingCount > 0" class="nav-badge">{{ chatPendingCount }}</span>
+            </div>
+
+            <div class="nav-item" :class="{ active: activeTab === 'support' }" @click="activeTab = 'support'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_support') }}</span>
+              <span v-if="supportPendingCount > 0" class="nav-badge">{{ supportPendingCount }}</span>
+            </div>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-group-title">{{ t('group_system') }}</div>
+            <div class="nav-item" :class="{ active: activeTab === 'admins' }" @click="activeTab = 'admins'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <circle cx="19" cy="11" r="2"></circle>
+                  <path d="M17 21v-2a4 4 0 0 0-3-3.87"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_employees') }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'shipping' }" @click="activeTab = 'shipping'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <rect x="1" y="3" width="15" height="13"></rect>
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                  <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                  <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_shipping') }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'payments' }" @click="activeTab = 'payments'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <rect x="1" y="4" width="22" height="16" rx="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg></span>
+              <span class="nav-label">{{ t('nav_payments') }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'logs' }" @click="activeTab = 'logs'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_logs') }}</span>
+              <span v-if="auditPendingCount > 0" class="nav-badge">{{ auditPendingCount }}</span>
+            </div>
+            <div class="nav-item" :class="{ active: activeTab === 'settings' }" @click="activeTab = 'settings'">
+              <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.5">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                  </path>
+                </svg></span>
+              <span class="nav-label">{{ t('nav_settings') }}</span>
+            </div>
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-view">
+        <div class="content-body">
+
+          <!-- BẢNG ĐIỀU KHIỂN (DASHBOARD) -->
+          <include-html src="src/views/Dashboard.html"></include-html>
+
+          <!-- PHÂN TÍCH KINH DOANH -->
+          <include-html src="src/views/Analytics.html"></include-html>
+
+          <!-- LỊCH SỬ CHAT ADMIN -->
+          <include-html src="src/views/AICenter.html"></include-html>
+
+          <!-- SẢN PHẨM -->
+          <include-html src="src/views/products.html"></include-html>
+
+          <!-- QUẢN LÝ Đơn hàng -->
+
+          <!-- QUẢN LÝ ĐƠN HÀNG -->
+          <include-html src="src/views/Orders.html"></include-html>
+
+
+
+          <!-- MÃ GIẢM GIÁ (VOUCHERS) -->
+          <include-html src="src/views/Vouchers.html"></include-html>
+
+          <!-- QUẢN LÝ NGƯỜI DÙNG -->
+          <include-html src="src/views/Customers.html"></include-html>
+
+          <!-- TÍCH ĐIỂM & HẠNG THẺ -->
+          <include-html src="src/views/Loyalty.html"></include-html>
+
+          <!-- GỬI THÔNG BÁO (PUSH) -->
+          <include-html src="src/views/Notifications.html"></include-html>
+
+
+
+          <!-- TRÒ CHUYỆN & CSKH -->
+          <include-html src="src/views/Chat.html"></include-html>
+
+          <!-- HỖ TRỢ & CSKH -->
+          <include-html src="src/views/Support.html"></include-html>
+
+          <!-- ADMIN & PHÂN QUYỀN -->
+          <include-html src="src/views/Admins.html"></include-html>
+
+          <!-- VẬN CHUYỂN & PHÍ SHIP -->
+          <include-html src="src/views/Shipping.html"></include-html>
+
+          <!-- THANH TOÁN & PARTNER -->
+          <include-html src="src/views/Payments.html"></include-html>
+
+          <!-- NHẬT KÝ AUDIT -->
+          <include-html src="src/views/Logs.html"></include-html>
+
+          <!-- CẤU HÌNH & CMS -->
+          <include-html src="src/views/Settings.html"></include-html>
+
+        </div>
+      </main>
+
+      <!-- Product CRUD Modal -->
+      <div v-if="showProductModal" class="modal-overlay" @click.self="showProductModal = false">
+        <div class="modal product-modal" style="width: 560px; max-height: 90vh; overflow-y: auto;">
+          <div class="modal-title" style="border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 14px;">{{ isEditingProduct ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm mới' }}</div>
+          <div class="admin-form" style="margin-top: 20px;">
+            
+            <!-- Tên sản phẩm -->
+            <div class="form-group">
+              <div class="flex-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="stat-label" style="margin-bottom: 0;">Tên sản phẩm <span style="color: #FF3B30;">*</span></label>
+                <span style="font-size: 10px; font-weight: 700; color: #86868b;">{{ productForm.ten ? productForm.ten.length : 0 }}/150 ký tự</span>
+              </div>
+              <input v-model="productForm.ten" class="mango-input" :class="{ 'input-error': productFormErrors.ten }" placeholder="e.g. MacBook Pro M3" maxlength="150" />
+              <div v-if="productFormErrors.ten" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.ten }}</div>
+            </div>
+
+            <!-- Danh mục, Giá và Tồn kho -->
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; height: 18px;">
+                  <label class="stat-label" style="margin-bottom: 0;">Danh mục</label>
+                </div>
+                <select v-model="productForm.danh_muc" class="mango-select" style="height: 45px;">
+                  <option value="iphone">iPhone</option>
+                  <option value="ipad">iPad</option>
+                  <option value="mac">Mac</option>
+                  <option value="watch">Watch</option>
+                  <option value="phu_kien">Phụ kiện</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; height: 18px;">
+                  <label class="stat-label" style="margin-bottom: 0;">Giá (VND) <span style="color: #FF3B30;">*</span></label>
+                  <span v-if="productForm.gia > 0" style="font-size: 8px; font-weight: 700; color: #34C759; background: rgba(52, 199, 89, 0.08); padding: 1px 4px; border-radius: 4px;">{{ formatPrice(productForm.gia) }}</span>
+                </div>
+                <input type="number" v-model.number="productForm.gia" class="mango-input" :class="{ 'input-error': productFormErrors.gia }" max="100000000000" style="height: 45px;" />
+                <div v-if="productFormErrors.gia" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.gia }}</div>
+              </div>
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; height: 18px;">
+                  <label class="stat-label" style="margin-bottom: 0;">Số lượng tồn <span style="color: #FF3B30;">*</span></label>
+                </div>
+                <input type="number" v-model.number="productForm.so_luong_kho" class="mango-input" :class="{ 'input-error': productFormErrors.so_luong_kho }" min="0" max="1000" style="height: 45px;" />
+                <div v-if="productFormErrors.so_luong_kho" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.so_luong_kho }}</div>
+              </div>
+            </div>
+
+            <!-- Chọn RAM -->
+            <div class="form-group">
+              <label class="stat-label">Bộ nhớ RAM hỗ trợ</label>
+              <div class="capacity-selector">
+                <div v-for="ram in commonRams" :key="ram" 
+                     class="cap-pill" 
+                     :class="{ active: isRamSelected(ram) }"
+                     @click="toggleRam(ram)">
+                  {{ ram }}
+                </div>
+              </div>
+              <div class="selected-tags margin-top-8" v-if="(productForm.ram || '').split(',').map(s => s.trim()).filter(Boolean).length > 0">
+                <span v-for="tag in (productForm.ram || '').split(',').filter(s => s.trim())" :key="tag" class="selected-tag">
+                  ⚡ {{ tag }} <i @click="toggleRam(tag.trim())" style="cursor: pointer; margin-left: 4px; font-weight: 800;">×</i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Custom Spec Pairings (RAM & Storage ROM) -->
+            <div class="form-group" v-if="(productForm.ram || '').split(',').map(s => s.trim()).filter(Boolean).length > 0" style="margin-top: 16px;">
+              <label class="stat-label" style="display: flex; align-items: center; gap: 6px; color: #007aff; font-weight: 700;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                  <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+                Thiết lập bộ nhớ đi kèm với từng loại RAM <span style="color: #FF3B30;">*</span>
+              </label>
+              <div style="background: rgba(0, 0, 0, 0.015); border: 1.5px solid rgba(0, 0, 0, 0.04); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 14px;">
+                <div v-for="ram in (productForm.ram || '').split(',').map(s => s.trim()).filter(Boolean)" :key="ram"
+                     style="background: #ffffff; border: 1.5px solid rgba(0,0,0,0.03); border-radius: 10px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.01);">
+                  <div style="font-size: 11px; font-weight: 800; color: #1d1d1f; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    ⚡ RAM {{ ram }}:
+                  </div>
+                  <div class="capacity-selector" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <div v-for="cap in commonCapacities" :key="cap" 
+                         class="cap-pill" 
+                         :class="{ active: isPairCapacitySelected(ram, cap) }"
+                         @click="togglePairCapacity(ram, cap)"
+                         style="padding: 4px 10px; font-size: 11px; border-radius: 6px;">
+                      {{ cap }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Màu sắc -->
+            <div class="form-group">
+              <div class="flex-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="stat-label" style="margin-bottom: 0;">Màu sắc sản phẩm (HEX, cách nhau bởi dấu phẩy)</label>
+                <span style="font-size: 10px; font-weight: 700; color: #86868b;">{{ (productForm.mau_sac || '').split(',').map(s => s.trim()).filter(Boolean).length }}/5 màu tối đa</span>
+              </div>
+              
+              <!-- Preset Colors Palette Picker -->
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 10px; background: rgba(0,0,0,0.02); padding: 8px 12px; border-radius: 10px; flex-wrap: wrap;">
+                <span style="font-size: 10px; font-weight: 700; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px;">Bộ màu gợi ý:</span>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <span v-for="preset in presetColors" :key="preset.hex"
+                        @click="toggleColor(preset.hex)"
+                        :style="{ backgroundColor: preset.hex, transform: (productForm.mau_sac || '').includes(preset.hex) ? 'scale(1.2)' : 'none', boxShadow: (productForm.mau_sac || '').includes(preset.hex) ? '0 0 0 2px #007aff' : 'none' }"
+                        style="width: 18px; height: 18px; border-radius: 50%; display: inline-block; cursor: pointer; border: 1px solid rgba(0,0,0,0.15); transition: all 0.15s;"
+                        :title="preset.name">
+                  </span>
+                  <!-- Custom native color picker button overlay -->
+                  <span style="width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border: 1.5px dashed #007aff; background: #ffffff; transition: all 0.15s; font-size: 11px; color: #007aff; font-weight: 800; position: relative; overflow: hidden;"
+                        title="Chọn màu tự do từ bảng màu">
+                    +
+                    <input type="color" @change="onNativeColorPicked" style="position: absolute; top: -5px; left: -5px; width: 30px; height: 30px; opacity: 0; cursor: pointer; padding: 0; border: none;" />
+                  </span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <input v-model="tempColor" class="mango-input" :class="{ 'input-error': productFormErrors.mau_sac }" placeholder="Nhập HEX (ví dụ: #FF0000) hoặc bấm + để mở bảng màu..." style="flex: 1;" @keyup.enter="addTempColor" />
+                <button @click="addTempColor" style="background: #007aff; color: white; border: none; border-radius: 8px; padding: 0 20px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                  OK
+                </button>
+              </div>
+              <div v-if="productFormErrors.mau_sac" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.mau_sac }}</div>
+              
+              <!-- Selected colors tags -->
+              <div class="selected-tags" v-if="productColorsPreview.length > 0" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <span v-for="c in productColorsPreview" :key="c" class="selected-tag" style="background: rgba(0,0,0,0.04); color: #1d1d1f; display: inline-flex; align-items: center; gap: 6px;">
+                  <span :style="{ backgroundColor: c }" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; border: 0.5px solid rgba(0,0,0,0.15);"></span>
+                  {{ c }}
+                  <i @click="toggleColor(c)" style="cursor: pointer; margin-left: 4px; font-weight: 800;">×</i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Live Preview of Variants -->
+            <div class="form-group" style="background: rgba(0, 122, 255, 0.04); border: 1px dashed rgba(0, 122, 255, 0.2); border-radius: 12px; padding: 16px; margin: 20px 0;">
+              <div class="flex-center-v gap-6" style="margin-bottom: 12px; display: flex; align-items: center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2.5" style="margin-right: 6px;">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                <span style="font-size: 11px; font-weight: 700; color: #007aff; text-transform: uppercase; letter-spacing: 0.5px;">Các phiên bản hiển thị tại Storefront</span>
+              </div>
+              
+              <div v-if="productVariantsPreview.length === 0" style="font-size: 11px; color: #86868b; text-align: center; padding: 8px 0;">
+                Nhấp chọn RAM và thiết lập bộ nhớ ở trên để xem danh sách các phiên bản cấu hình sẽ hiển thị cho khách hàng chọn mua.
+              </div>
+              
+              <div v-else class="flex-wrap gap-8" style="display: flex; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                <div v-for="(v, index) in productVariantsPreview" :key="index" 
+                     style="background: #ffffff; border: 1px solid rgba(0,0,0,0.06); border-radius: 8px; padding: 8px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1 1 calc(50% - 8px); min-width: 140px;">
+                  <span style="color: #007aff;">#{{ index + 1 }}</span>
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <div style="color: #1d1d1f; font-size: 11px;">
+                      <span v-if="v.ram" style="background: rgba(0, 122, 255, 0.08); color: #007aff; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 4px;">RAM {{ v.ram }}</span>
+                      <span v-if="v.capacity" style="background: rgba(134, 134, 139, 0.1); color: #1d1d1f; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">{{ v.capacity }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Colors preview -->
+              <div v-if="productColorsPreview.length > 0" style="margin-top: 12px; border-top: 0.5px solid rgba(0, 122, 255, 0.1); padding-top: 10px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; font-weight: 600; color: #86868b;">Màu sắc:</span>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <span v-for="c in productColorsPreview" :key="c" 
+                        :style="{ backgroundColor: c }" 
+                        style="width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.15);"
+                        :title="c"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mô tả -->
+            <div class="form-group">
+              <div class="flex-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="stat-label" style="margin-bottom: 0;">Mô tả</label>
+                <span style="font-size: 10px; font-weight: 700;" :style="{ color: (productForm.mo_ta || '').trim().split(/\s+/).filter(Boolean).length > 500 ? '#FF3B30' : '#86868b' }">
+                  {{ (productForm.mo_ta || '').trim().split(/\s+/).filter(Boolean).length }}/500 từ
+                </span>
+              </div>
+              <textarea v-model="productForm.mo_ta" class="mango-textarea" rows="3" placeholder="Mô tả tóm tắt thông số và các đặc điểm nổi bật..."></textarea>
+              <div v-if="productFormErrors.mo_ta" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.mo_ta }}</div>
+            </div>
+
+            <!-- Hình ảnh đại diện -->
+            <div class="form-group">
+              <label class="stat-label">Hình ảnh sản phẩm đại diện <span style="color: #FF3B30;">*</span></label>
+              <div class="flex-center-h gap-12">
+                <div v-if="productForm.hinh_anh" class="main-image-preview margin-bottom-8">
+                  <img :src="productForm.hinh_anh" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-light);">
+                </div>
+                <input v-model="productForm.hinh_anh" class="mango-input" :class="{ 'input-error': productFormErrors.hinh_anh }" placeholder="URL hình ảnh hoặc tải lên..." />
+                <button class="action-btn-mini info" @click="$refs.fileInput.click()" title="Tải ảnh lên">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </button>
+                <input type="file" ref="fileInput" @change="handleFileUpload" style="display: none" accept="image/*" />
+              </div>
+              <div v-if="productFormErrors.hinh_anh" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.hinh_anh }}</div>
+            </div>
+
+            <!-- Thư viện ảnh chi tiết -->
+            <div class="form-group">
+              <div class="flex-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="stat-label" style="margin-bottom: 0;">Thư viện ảnh (Chi tiết)</label>
+                <span style="font-size: 10px; font-weight: 700; color: #86868b;">{{ (productForm.thu_vien_anh || []).length }}/10 ảnh tối đa</span>
+              </div>
+              <div class="gallery-preview flex-wrap gap-8 margin-bottom-8" style="display: flex;">
+                <div v-for="(img, idx) in productForm.thu_vien_anh" :key="idx" class="gallery-item relative">
+                  <img :src="img"
+                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 0.5px solid var(--border-light);">
+                  <button @click="productForm.thu_vien_anh.splice(idx, 1)" class="delete-btn-mini">×</button>
+                </div>
+                <!-- Hide the add button if gallery contains 10 or more images -->
+                <div v-if="(productForm.thu_vien_anh || []).length < 10" class="add-gallery-btn" @click="$refs.galleryInput.click()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </div>
+                <input type="file" ref="galleryInput" @change="handleGalleryUpload" style="display: none"
+                  accept="image/*" multiple />
+              </div>
+              <div v-if="productFormErrors.thu_vien_anh" class="field-error" style="color: #FF3B30; font-size: 11px; margin-top: 4px;">{{ productFormErrors.thu_vien_anh }}</div>
+            </div>
+
+            <!-- Trạng thái sản phẩm mới -->
+            <div class="flex-center-h gap-12 margin-top-12">
+              <label class="ios-switch"><input type="checkbox" v-model="productForm.is_new" :true-value="1"
+                  :false-value="0"><span class="slider"></span></label>
+              <span class="small bold">Sản phẩm mới</span>
+            </div>
+          </div>
+          <div class="modal-actions" style="margin-top: 32px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 20px;">
+            <button class="modal-btn cancel" @click="showProductModal = false">Hủy bỏ</button>
+            <button class="modal-btn confirm" @click="saveProduct">Lưu thay đổi</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar (Chat Panel) -->
+      <aside class="chat-panel" v-show="isChatVisible">
+        <div class="chat-header">
+          <div class="chat-header-left" @click="startNewChat" style="cursor: pointer; display: flex; align-items: center; gap: 2px; padding: 6px; border-radius: 8px; transition: all 0.2s;" title="Tạo cuộc hội thoại mới" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              style="margin-left: -2px; opacity: 0.6;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="chat-header-center">
+            <span class="chat-header-title">Peach Assistant</span>
+          </div>
+          <div class="chat-header-right" style="width: 32px; display: flex; justify-content: flex-end;">
+            <!-- Clock icon removed as requested by user -->
+          </div>
+        </div>
+
+        <div class="chat-messages" ref="sidebarChatContainer" style="overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 16px; flex: 1;">
+          <div v-for="msg in sidebarMessages" :key="msg.id" :class="['msg', msg.sender]" style="white-space: pre-line; word-break: break-word;">
+            {{ msg.text }}
+          </div>
+          
+          <!-- Bouncing Loading Dots Indicator for AI -->
+          <div v-if="loadingAiResponse" class="msg ai" style="display: flex; gap: 5px; align-items: center; width: fit-content; padding: 10px 14px; background: rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid rgba(0,0,0,0.02);">
+            <span style="width: 6px; height: 6px; background-color: #86868b; border-radius: 50%; display: inline-block; animation: dot-bounce-animation 1.4s infinite ease-in-out both;"></span>
+            <span style="width: 6px; height: 6px; background-color: #86868b; border-radius: 50%; display: inline-block; animation: dot-bounce-animation 1.4s infinite ease-in-out both; animation-delay: 0.2s;"></span>
+            <span style="width: 6px; height: 6px; background-color: #86868b; border-radius: 50%; display: inline-block; animation: dot-bounce-animation 1.4s infinite ease-in-out both; animation-delay: 0.4s;"></span>
+          </div>
+          <style>
+            @keyframes dot-bounce-animation {
+              0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+              40% { transform: scale(1.0); opacity: 1; }
+            }
+          </style>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="chat-input-container">
+            <button class="chat-tool-btn" title="Tải file lên">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48">
+                </path>
+              </svg>
+            </button>
+            <textarea v-model="aiQuery" placeholder="Hỏi Peach Assistant..." @keyup.enter="sendQuery"
+              class="chat-input"></textarea>
+            <button class="chat-send-btn" @click="sendQuery">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          <div class="char-count">{{ aiQuery.length.toLocaleString('vi-VN') }} ký tự</div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+
+    const fs = require('fs');
+    const path = require('path');
+    document.querySelectorAll('include-html').forEach(el => {
+      try {
+        const src = el.getAttribute('src');
+        let content = fs.readFileSync(path.join(__dirname, src), 'utf8');
+        
+        // Extract and append <style> blocks to head to prevent Vue template warnings
+        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+        let match;
+        while ((match = styleRegex.exec(content)) !== null) {
+          const styleContent = match[1];
+          const styleEl = document.createElement('style');
+          styleEl.textContent = styleContent;
+          document.head.appendChild(styleEl);
+        }
+        content = content.replace(styleRegex, '');
+        
+        el.outerHTML = content;
+      } catch (e) {
+        console.error('Lỗi tải component: ' + el.getAttribute('src'), e);
+      }
+    });
+  </script>
+  <script src="src/viewmodels/AdminViewModel.js"></script>
+  <script src="js/admin_app.js"></script>
+</body>
+
+</html>

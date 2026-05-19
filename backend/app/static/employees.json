@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "Nguyễn Văn Admin",
+    "role": "ADMIN",
+    "username": "admin",
+    "password": "123",
+    "lastLogin": "10 phút trước",
+    "email": "admin@peach.vn",
+    "phone": "0901234567"
+  },
+  {
+    "id": 1779133772,
+    "name": "Khánh",
+    "role": "STAFF",
+    "username": "nhanvien01",
+    "password": "12345",
+    "email": "nhanvien@gmail.com",
+    "phone": "0333427187",
+    "lastLogin": "10:23 19/05/2026"
+  }
+]

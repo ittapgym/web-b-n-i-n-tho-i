@@ -1,0 +1,34 @@
+[
+  {
+    "id": "s1",
+    "employeeId": 2,
+    "employeeName": "Trần Thị Kho",
+    "date": "2026-05-19",
+    "shift": "Ca Sáng",
+    "notes": "Trực kho và xuất hàng"
+  },
+  {
+    "id": "s2",
+    "employeeId": 3,
+    "employeeName": "Lê Văn Bán",
+    "date": "2026-05-19",
+    "shift": "Ca Chiều",
+    "notes": "Hỗ trợ khách mua trực tiếp"
+  },
+  {
+    "id": "s3",
+    "employeeId": 4,
+    "employeeName": "Phạm Hỗ Trợ",
+    "date": "2026-05-19",
+    "shift": "Ca Tối",
+    "notes": "Trực kênh chat online"
+  },
+  {
+    "id": "s_1779134063",
+    "employeeId": 1779133772,
+    "employeeName": "Khánh",
+    "date": "2026-05-15",
+    "shift": "Ca Sáng",
+    "notes": ""
+  }
+]

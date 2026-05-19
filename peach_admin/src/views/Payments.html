@@ -1,0 +1,128 @@
+<div v-if="activeTab === 'payments'" class="view-pane payments-view">
+  <div class="pane-header mango-flex-between">
+    <h1>Thanh toán & Partner</h1>
+    <div class="flex-gap-12 flex-center-h">
+      <!-- Bulk Delete Button -->
+      <button v-if="selectedPaymentIds.length > 0" class="action-btn danger" @click="deleteSelectedPayments"
+        style="background: #FF3B30 !important; color: white !important; border: none !important; border-radius: 12px !important;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          style="margin-right: 6px;">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        Xóa {{ selectedPaymentIds.length }} đối tác đã chọn
+      </button>
+
+      <button class="action-btn icon-btn primary" @click="openAddPaymentModal" title="+ Cấu hình cổng">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrapper mango-card">
+    <table class="xcode-table">
+      <thead>
+        <tr>
+          <th style="width: 40px; padding-left: 20px;">
+            <input type="checkbox" :checked="selectedPaymentIds.length === paymentPartners.length && paymentPartners.length > 0"
+              @change="toggleSelectAllPayments" style="cursor: pointer; width: 16px; height: 16px;">
+          </th>
+          <th>ĐỐI TÁC</th>
+          <th>MÃ PHƯƠNG THỨC</th>
+          <th>LOẠI HÌNH</th>
+          <th>MÔ TẢ</th>
+          <th>TRẠNG THÁI</th>
+          <th class="text-center" style="width: 100px;">THAO TÁC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="p in paymentPartners" :key="p.id" :class="{ 'row-selected': selectedPaymentIds.includes(p.id) }">
+          <td style="padding-left: 20px;">
+            <input type="checkbox" :checked="selectedPaymentIds.includes(p.id)"
+              @change="togglePaymentSelection(p.id)" style="cursor: pointer; width: 16px; height: 16px;">
+          </td>
+          <td class="bold">{{ p.ten_doi_tac }}</td>
+          <td class="dim small">{{ p.ma_phuong_thuc }}</td>
+          <td class="dim">{{ p.loai_hinh }}</td>
+          <td class="dim small cell-truncate" style="max-width: 200px;">{{ p.mo_ta || '—' }}</td>
+          <td>
+            <span :class="'status-badge status-' + (p.kich_hoat ? 'active' : 'disabled')">
+              {{ p.kich_hoat ? 'Đang hoạt động' : 'Đã tắt' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="flex-center gap-8">
+              <button class="action-btn-mini" @click="openEditPaymentModal(p)" title="Sửa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"></path>
+                </svg>
+              </button>
+              <button class="action-btn-mini danger" @click="deletePaymentPartner(p.id)" title="Xóa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr v-if="paymentPartners.length === 0">
+          <td colspan="7" style="text-align: center; padding: 60px 20px; color: var(--text-dim);">
+            Chưa có đối tác thanh toán nào.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Payment Modal -->
+  <div v-if="showPaymentModal" class="modal-overlay" @click.self="showPaymentModal = false">
+    <div class="modal product-modal" style="width: 520px;">
+      <div class="modal-title">{{ isEditingPayment ? 'Sửa đối tác thanh toán' : 'Thêm đối tác thanh toán' }}</div>
+      
+      <div class="admin-form" style="margin-top: 20px;">
+        <div class="form-group">
+          <label>Tên đối tác *</label>
+          <input type="text" v-model="paymentForm.ten_doi_tac" class="mango-input"
+            placeholder="VD: Chuyển khoản ngân hàng" />
+        </div>
+        <div class="form-group">
+          <label>Mã phương thức *</label>
+          <input type="text" v-model="paymentForm.ma_phuong_thuc" class="mango-input" placeholder="VD: chuyen_khoan" />
+        </div>
+        <div class="form-group">
+          <label>Loại hình</label>
+          <select v-model="paymentForm.loai_hinh" class="mango-input">
+            <option value="Chuyen_khoan">Chuyển khoản</option>
+            <option value="COD">COD (Tiền mặt)</option>
+            <option value="Vi_dien_tu">Ví điện tử</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mô tả</label>
+          <textarea v-model="paymentForm.mo_ta" class="mango-input" rows="2" placeholder="Mô tả ngắn..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Kích hoạt</label>
+          <div style="margin-top: 8px;">
+            <label class="ios-switch">
+              <input type="checkbox" v-model="paymentForm.kich_hoat">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 32px;">
+        <button class="modal-btn cancel" @click="showPaymentModal = false">Hủy</button>
+        <button class="modal-btn confirm" @click="savePaymentPartner">
+          {{ isEditingPayment ? 'Cập nhật' : 'Thêm mới' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
