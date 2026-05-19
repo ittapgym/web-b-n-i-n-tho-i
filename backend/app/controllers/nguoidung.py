@@ -22,6 +22,8 @@ def _build_image_url(hinh_anh_raw) -> str:
     ha = str(hinh_anh_raw)
     if not ha.strip():
         return None
+    if "127.0.0.1:8000" in ha:
+        ha = ha.replace("http://127.0.0.1:8000", "")
     if ha.startswith('http'):
         return ha
     # Normalize backslashes to forward slashes
