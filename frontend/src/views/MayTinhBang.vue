@@ -99,6 +99,7 @@ onMounted(fetchProducts);
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: 1fr;
   gap: 30px;
   padding: 20px 0;
   text-align: left;

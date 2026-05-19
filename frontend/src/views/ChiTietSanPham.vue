@@ -103,11 +103,6 @@
           </div>
         </div>
 
-        <div class="description-section">
-          <h3>Mô tả sản phẩm</h3>
-          <p class="description-text">{{ cleanDescription }}</p>
-        </div>
-
         <div class="action-buttons">
           <button 
             class="btn-add-cart" 
@@ -139,6 +134,18 @@
           <div class="policy-item">✓ Bảo hành chính hãng 12 tháng</div>
           <div class="policy-item">✓ Đổi trả trong 30 ngày</div>
           <div class="policy-item">✓ Giao hàng miễn phí toàn quốc</div>
+        </div>
+
+        <div class="description-section" v-if="cleanDescription">
+          <h3>Mô tả sản phẩm</h3>
+          <div :class="['description-wrapper', { 'expanded': isExpanded }]">
+            <p class="description-text">{{ cleanDescription }}</p>
+            <div v-if="!isExpanded && isLongDescription" class="fade-overlay"></div>
+          </div>
+          <button v-if="isLongDescription" @click="isExpanded = !isExpanded" class="toggle-desc-btn">
+            {{ isExpanded ? 'Thu gọn' : 'Xem thêm' }}
+            <svg :class="{ 'rotate': isExpanded }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -193,6 +200,11 @@ const activePairings = computed(() => {
 const cleanDescription = computed(() => {
   if (!product.value?.mo_ta) return ''
   return product.value.mo_ta.replace(/<!--SPECS_PAIRINGS:(.*?)-->/, '').trim()
+})
+
+const isExpanded = ref(false)
+const isLongDescription = computed(() => {
+  return cleanDescription.value.length > 250
 })
 
 const dungLuongList = computed(() => {
@@ -579,16 +591,70 @@ onMounted(() => {
 
 .status-stock { color: #28c840; font-weight: 600; margin-left: 5px; }
 
+.description-section {
+  margin-top: 10px;
+}
+
 .description-section h3 {
   font-size: 15px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.description-wrapper {
+  position: relative;
+  max-height: 120px;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.description-wrapper.expanded {
+  max-height: 2000px;
 }
 
 .description-text { 
   color: #424245; 
   font-size: 14px; 
   line-height: 1.5; 
+  white-space: pre-line;
+  margin: 0;
+}
+
+.fade-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+  pointer-events: none;
+}
+
+.toggle-desc-btn {
+  background: none;
+  border: none;
+  color: #007aff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.toggle-desc-btn:hover {
+  color: #0056b3;
+}
+
+.toggle-desc-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.toggle-desc-btn svg.rotate {
+  transform: rotate(180deg);
 }
 
 .action-buttons {

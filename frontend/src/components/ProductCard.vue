@@ -78,6 +78,7 @@ const formatPrice = (value) => {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  height: 100%;
   max-width: 400px;
   cursor: pointer;
 }
@@ -116,6 +117,14 @@ const formatPrice = (value) => {
   border: 1px solid rgba(0,0,0,0.05);
 }
 
+.product-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  flex-grow: 1;
+}
+
 .new-label {
   color: #bf4800;
   font-size: 12px;
@@ -136,12 +145,19 @@ const formatPrice = (value) => {
   color: #1d1d1f;
   margin-bottom: 20px;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.8em;
 }
 
 .product-price {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-top: auto;
   margin-bottom: 30px;
 }
 
