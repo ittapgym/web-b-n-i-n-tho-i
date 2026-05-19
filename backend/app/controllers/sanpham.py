@@ -16,10 +16,19 @@ def format_product_urls(product, request: Request) -> SanPhamRead:
     base_url = str(request.base_url).rstrip('/')
     p_read = SanPhamRead.model_validate(product)
     
+    def clean_url(url_str):
+        if not url_str:
+            return url_str
+        url_str = url_str.strip()
+        if "/static/uploads/" in url_str:
+            return "/static/uploads/" + url_str.split("/static/uploads/", 1)[1]
+        for host in ["http://127.0.0.1:8000", "http://localhost:8000", "https://peach-store-backend.onrender.com"]:
+            if url_str.startswith(host):
+                return url_str[len(host):]
+        return url_str
+
     if p_read.hinh_anh:
-        ha = p_read.hinh_anh.strip()
-        if "127.0.0.1:8000" in ha:
-            ha = ha.replace("http://127.0.0.1:8000", "")
+        ha = clean_url(p_read.hinh_anh)
         if not ha.startswith("http"):
             p_read.hinh_anh = f"{base_url}{ha}"
         else:
@@ -29,13 +38,11 @@ def format_product_urls(product, request: Request) -> SanPhamRead:
         new_gallery = []
         for img in p_read.thu_vien_anh:
             if img:
-                img_str = img.strip()
-                if "127.0.0.1:8000" in img_str:
-                    img_str = img_str.replace("http://127.0.0.1:8000", "")
-                if not img_str.startswith("http"):
-                    new_gallery.append(f"{base_url}{img_str}")
+                img_clean = clean_url(img)
+                if not img_clean.startswith("http"):
+                    new_gallery.append(f"{base_url}{img_clean}")
                 else:
-                    new_gallery.append(img_str)
+                    new_gallery.append(img_clean)
         p_read.thu_vien_anh = new_gallery
         
     return p_read

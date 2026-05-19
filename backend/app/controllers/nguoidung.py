@@ -22,8 +22,12 @@ def _build_image_url(hinh_anh_raw) -> str:
     ha = str(hinh_anh_raw)
     if not ha.strip():
         return None
-    if "127.0.0.1:8000" in ha:
-        ha = ha.replace("http://127.0.0.1:8000", "")
+    if "/static/uploads/" in ha:
+        ha = "/static/uploads/" + ha.split("/static/uploads/", 1)[1]
+    else:
+        for host in ["http://127.0.0.1:8000", "http://localhost:8000", "https://peach-store-backend.onrender.com"]:
+            if ha.startswith(host):
+                ha = ha[len(host):]
     if ha.startswith('http'):
         return ha
     # Normalize backslashes to forward slashes

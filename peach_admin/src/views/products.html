@@ -134,7 +134,9 @@
                      {{ p.so_luong_kho > 0 ? p.so_luong_kho + ' máy' : 'Hết hàng' }}
                   </span>
                </td>
-               <td class="dim x-small cell-truncate" style="max-width: 200px;" :title="cleanDescription(p.mo_ta)">{{ cleanDescription(p.mo_ta) }}</td>
+               <td class="dim x-small" style="max-width: 200px;">
+                  <div class="cell-truncate" :title="cleanDescription(p.mo_ta)">{{ cleanDescription(p.mo_ta) }}</div>
+               </td>
                <td>
                   <div class="flex-center gap-8">
                      <button class="action-btn-mini" @click="openEditProductModal(p)"><svg width="14" height="14"

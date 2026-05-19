@@ -1062,10 +1062,12 @@ select {
 }
 
 /* Prevent description/text columns from breaking layout */
-.xcode-table td.cell-truncate {
+.xcode-table .cell-truncate {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .stock-pill {

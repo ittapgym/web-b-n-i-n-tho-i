@@ -47,7 +47,9 @@
           <td class="bold">{{ p.ten_doi_tac }}</td>
           <td class="dim small">{{ p.ma_phuong_thuc }}</td>
           <td class="dim">{{ p.loai_hinh }}</td>
-          <td class="dim small cell-truncate" style="max-width: 200px;">{{ p.mo_ta || '—' }}</td>
+          <td class="dim small" style="max-width: 200px;">
+            <div class="cell-truncate" :title="p.mo_ta">{{ p.mo_ta || '—' }}</div>
+          </td>
           <td>
             <span :class="'status-badge status-' + (p.kich_hoat ? 'active' : 'disabled')">
               {{ p.kich_hoat ? 'Đang hoạt động' : 'Đã tắt' }}
