@@ -10,5 +10,7 @@ class CauHinh:
     ALGORITHM: str = "HS256"
     THOI_GIAN_TOKEN_PHUT: int = 60
     DATABASE_URL: str = os.getenv("DATABASE_URL")
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 settings = CauHinh()
