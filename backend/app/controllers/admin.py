@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.sanpham import SanPham
@@ -60,7 +60,7 @@ def get_recent_activities(db: Session = Depends(get_db)):
     return results
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(request: Request, file: UploadFile = File(...)):
     """Tải ảnh lên thư mục static/uploads và trả về URL (Chỉ nhận ảnh)"""
     try:
         # Kiểm tra định dạng file
@@ -84,7 +84,8 @@ async def upload_file(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        image_url = f"/static/uploads/{unique_filename}"
+        base_url = str(request.base_url).rstrip('/')
+        image_url = f"{base_url}/static/uploads/{unique_filename}"
         return {"url": image_url}
     except HTTPException as he:
         raise he
