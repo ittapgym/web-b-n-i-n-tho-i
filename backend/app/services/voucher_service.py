@@ -11,7 +11,18 @@ class VoucherService:
     async def kiem_tra_voucher(
         db: Session, ma_voucher: str, tong_bill: float
     ) -> KiemTraVoucherResponse:
-        """Kiem tra ma voucher co ton tai, con han, du dieu kien don hang hay khong"""
+        """
+        Kiểm tra độ hợp lệ của một mã giảm giá (voucher) cụ thể.
+        Xét các điều kiện: mã tồn tại, không bị hủy, chưa hết hạn, còn lượt sử dụng, và tổng tiền đạt giá trị tối thiểu.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            ma_voucher (str): Mã code giảm giá cần kiểm tra.
+            tong_bill (float): Tổng giá trị của đơn hàng hiện tại.
+
+        Returns:
+            KiemTraVoucherResponse: Kết quả kiểm tra chi tiết (hợp lệ hay không, lỗi cụ thể và số tiền giảm).
+        """
         voucher = db.query(Voucher).filter(Voucher.ma_voucher == ma_voucher).first()
 
         # ---- Status: da_huy -> hidden completely (treat as not found) ----
@@ -78,7 +89,16 @@ class VoucherService:
 
     @staticmethod
     async def tinh_so_tien_giam(tong_bill: float, voucher: Voucher) -> float:
-        """Tra ve so tien khach duoc giam thuc te"""
+        """
+        Tính toán số tiền giảm giá thực tế của voucher dựa trên cấu hình (phần trăm kèm mức tối đa hoặc số tiền cố định).
+
+        Args:
+            tong_bill (float): Tổng giá trị hóa đơn.
+            voucher (Voucher): Đối tượng mã giảm giá đang xét.
+
+        Returns:
+            float: Số tiền được chiết khấu giảm giá.
+        """
         if voucher.loai_giam_gia == "phan_tram":
             so_tien = tong_bill * voucher.gia_tri_giam / 100
             # Neu co giam_toi_da, khong vuot qua muc nay
@@ -91,7 +111,14 @@ class VoucherService:
 
     @staticmethod
     async def cap_nhat_luot_dung(db: Session, id_voucher: int):
-        """Tru di 1 luot su dung sau khi don hang thanh cong"""
+        """
+        Trừ đi 1 lượt sử dụng của voucher sau khi đơn hàng áp dụng thành công.
+        Tự động chuyển trạng thái sang 'het_han' nếu lượt sử dụng còn lại về 0.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            id_voucher (int): ID định danh của voucher.
+        """
         voucher = db.query(Voucher).filter(Voucher.id == id_voucher).first()
         if voucher and voucher.so_luong_con_lai > 0:
             voucher.so_luong_con_lai -= 1
@@ -102,7 +129,15 @@ class VoucherService:
 
     @staticmethod
     async def lay_danh_sach_voucher(db: Session) -> List[Voucher]:
-        """Lay danh sach voucher dang hoat dong (cho khach hang)"""
+        """
+        Lấy danh sách mã giảm giá đang hoạt động, chưa quá hạn, và còn số lượt sử dụng.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            List[Voucher]: Danh sách các voucher khả dụng cho khách hàng.
+        """
         now = datetime.utcnow()
         return (
             db.query(Voucher)
@@ -116,7 +151,15 @@ class VoucherService:
 
     @staticmethod
     async def lay_danh_sach_voucher_cho_user(db: Session) -> List[Voucher]:
-        """Lay danh sach voucher cho user (loai tru da_huy - bao gom dang_hoat_dong, tam_dung, het_han)"""
+        """
+        Lấy danh sách voucher dành cho hiển thị ở phía Client (bao gồm cả mã tạm dừng hoặc hết hạn, loại trừ mã đã hủy).
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            List[Voucher]: Danh sách voucher hiển thị.
+        """
         return (
             db.query(Voucher)
             .filter(Voucher.trang_thai != "da_huy")
@@ -126,12 +169,34 @@ class VoucherService:
 
     @staticmethod
     async def lay_tat_ca_voucher(db: Session) -> List[Voucher]:
-        """Lay tat ca voucher (cho Admin)"""
+        """
+        Lấy toàn bộ danh sách voucher trong hệ thống phục vụ giao diện quản trị của Admin.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            List[Voucher]: Danh sách đầy đủ voucher sắp xếp theo thời gian tạo mới nhất.
+        """
         return db.query(Voucher).order_by(Voucher.ngay_tao.desc()).all()
 
     @staticmethod
     async def cap_nhat_trang_thai(db: Session, id: int, trang_thai: str) -> Voucher:
-        """Admin cap nhat nhanh trang thai voucher (dang_hoat_dong / tam_dung)"""
+        """
+        Cập nhật nhanh trạng thái bật/tắt của một mã giảm giá.
+        Đồng thời ghi nhật ký hoạt động của quản trị viên.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            id (int): ID của voucher cần cập nhật.
+            trang_thai (str): Trạng thái mới thiết lập (dang_hoat_dong / tam_dung).
+
+        Returns:
+            Voucher: Đối tượng voucher sau cập nhật.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy voucher.
+        """
         voucher = db.query(Voucher).filter(Voucher.id == id).first()
         if not voucher:
             raise HTTPException(status_code=404, detail="Khong tim thay voucher")
@@ -149,7 +214,20 @@ class VoucherService:
 
     @staticmethod
     async def tao_voucher(db: Session, data: VoucherCreate) -> Voucher:
-        """Admin tao voucher moi"""
+        """
+        Tạo mới một mã giảm giá trong hệ thống.
+        Kiểm tra mã trùng lặp và ghi nhật ký hoạt động quản trị viên.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            data (VoucherCreate): Dữ liệu cấu hình voucher mới.
+
+        Returns:
+            Voucher: Đối tượng voucher vừa tạo.
+
+        Raises:
+            HTTPException: Lỗi 400 nếu mã voucher đã tồn tại trước đó.
+        """
         # Kiem tra ma da ton tai
         existing = (
             db.query(Voucher).filter(Voucher.ma_voucher == data.ma_voucher).first()
@@ -170,7 +248,21 @@ class VoucherService:
 
     @staticmethod
     async def cap_nhat_voucher(db: Session, id: int, data: VoucherUpdate) -> Voucher:
-        """Admin cap nhat voucher"""
+        """
+        Cập nhật thông tin chi tiết của một mã giảm giá trong DB.
+        Đồng thời ghi nhật ký hoạt động của quản trị viên.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            id (int): ID định danh của voucher cần cập nhật.
+            data (VoucherUpdate): Dữ liệu cập nhật mới.
+
+        Returns:
+            Voucher: Đối tượng sau cập nhật thành công.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy voucher.
+        """
         voucher = db.query(Voucher).filter(Voucher.id == id).first()
         if not voucher:
             raise HTTPException(status_code=404, detail="Khong tim thay voucher")
@@ -190,7 +282,20 @@ class VoucherService:
 
     @staticmethod
     async def xoa_voucher(db: Session, id: int):
-        """Admin xoa voucher"""
+        """
+        Xóa vĩnh viễn một mã giảm giá khỏi hệ thống.
+        Đồng thời ghi nhật ký hoạt động của quản trị viên.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            id (int): ID định danh của voucher cần xóa.
+
+        Returns:
+            dict: Thông báo kết quả xóa voucher thành công.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy voucher.
+        """
         voucher = db.query(Voucher).filter(Voucher.id == id).first()
         if not voucher:
             raise HTTPException(status_code=404, detail="Khong tim thay voucher")

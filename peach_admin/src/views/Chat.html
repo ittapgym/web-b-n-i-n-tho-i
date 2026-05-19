@@ -94,7 +94,7 @@
             >
                <!-- Avatar -->
                <div v-if="c.hinh_anh" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(0,0,0,0.05); flex-shrink: 0;">
-                  <img :src="c.hinh_anh" style="width: 100%; height: 100%; object-fit: cover;" />
+                  <img :src="formatImageUrl(c.hinh_anh)" @error="handleAvatarError(c)" style="width: 100%; height: 100%; object-fit: cover;" />
                </div>
                <div v-else :style="{ background: stringToColor(c.ho_ten || 'U') }" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 14px; flex-shrink: 0;">
                   {{ (c.ho_ten || 'U').charAt(0) }}
@@ -124,7 +124,7 @@
             <div style="background: #ffffff; padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;">
                <div style="display: flex; align-items: center; gap: 10px;">
                   <div v-if="selectedChatCustomer.hinh_anh" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(0,0,0,0.05);">
-                     <img :src="selectedChatCustomer.hinh_anh" style="width: 100%; height: 100%; object-fit: cover;" />
+                     <img :src="formatImageUrl(selectedChatCustomer.hinh_anh)" @error="handleAvatarError(selectedChatCustomer)" style="width: 100%; height: 100%; object-fit: cover;" />
                   </div>
                   <div v-else :style="{ background: stringToColor(selectedChatCustomer.ho_ten || 'U') }" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 14px;">
                      {{ (selectedChatCustomer.ho_ten || 'U').charAt(0) }}

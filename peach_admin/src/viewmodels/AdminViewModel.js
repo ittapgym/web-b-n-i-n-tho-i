@@ -1,7 +1,15 @@
 /**
- * src/viewmodels/AdminViewModel.js
+ * ViewModel cốt lõi điều phối toàn bộ luồng dữ liệu quản trị (Admin Dashboard).
+ * Quản lý trạng thái ứng dụng Vue, đồng bộ hóa dữ liệu thời gian thực từ các API.
+ * 
+ * @module AdminViewModel
  */
 window.AdminViewModel = {
+  /**
+   * Khởi tạo các reactive state và các hàm xử lý API chính của hệ thống Admin.
+   * 
+   * @returns {Object} Các thuộc tính và phương thức được Vue binding trực tiếp lên UI.
+   */
   setup() {
     if (typeof Vue === 'undefined') {
       console.error("Vue is not defined. Ensure Vue.js is loaded before AdminViewModel.js");
@@ -490,12 +498,18 @@ window.AdminViewModel = {
       );
     });
 
+    /**
+     * Cập nhật trạng thái xử lý cho một yêu cầu hỗ trợ khách hàng (Support Ticket).
+     * 
+     * @param {number} ticketId - ID của ticket cần sửa đổi.
+     * @param {string} status - Trạng thái mới (ví dụ: 'da_xu_ly', 'dang_cho').
+     */
     const updateSupportTicketStatus = async (ticketId, status) => {
       try {
         const res = await fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tickets/${ticketId}/status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status })
+          body: JSON.stringify({ trang_thai: status })
         });
         if (res.ok) {
           if (window.showToast) window.showToast("Thành công", "Đã cập nhật trạng thái yêu cầu hỗ trợ.", "success");
@@ -1795,15 +1809,54 @@ window.AdminViewModel = {
       try {
         console.log("[DEBUG] Fetching customers list...");
         const res = await fetch((window.API_BASE || 'http://127.0.0.1:8000') + '/api/admin/customers/');
-        if (res.ok) customers.value = await res.json();
-      } catch (e) { console.error("Lỗi tải khách hàng"); }
+        if (res.ok) {
+          const data = await res.json();
+          customers.value = data.map(c => {
+            if (c.hinh_anh && !c.hinh_anh.startsWith('http://') && !c.hinh_anh.startsWith('https://')) {
+              const base = window.API_BASE || 'http://127.0.0.1:8000';
+              const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+              const cleanPath = c.hinh_anh.startsWith('/') ? c.hinh_anh : '/' + c.hinh_anh;
+              c.hinh_anh = cleanBase + cleanPath;
+            }
+            return c;
+          });
+        }
+      } catch (e) { console.error("Lỗi tải khách hàng", e); }
     };
 
     const handleAvatarError = (customer) => {
-      const idx = customers.value.findIndex(c => c.id === customer.id);
+      if (customer) {
+        customer.hinh_anh = null;
+      }
+      const idx = customers.value.findIndex(c => c && c.id === customer.id);
       if (idx !== -1) {
         customers.value[idx].hinh_anh = null;
       }
+    };
+
+    const formatImageUrl = (url) => {
+      if (!url) return '';
+      if (typeof url !== 'string') {
+        if (Array.isArray(url)) {
+          if (url.length === 0) return '';
+          url = url[0];
+        } else {
+          url = String(url);
+        }
+      }
+      if (!url || typeof url !== 'string') return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      
+      let cleanUrl = url;
+      if (cleanUrl.includes('/static/uploads/')) {
+        cleanUrl = '/static/uploads/' + cleanUrl.split('/static/uploads/')[1];
+      } else if (cleanUrl.includes('\\static\\uploads\\')) {
+        cleanUrl = '/static/uploads/' + cleanUrl.split('\\static\\uploads\\')[1];
+      }
+      
+      const base = window.API_BASE || 'https://peach-store-backend.onrender.com';
+      const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+      return cleanBase + cleanUrl;
     };
 
     const fetchVouchers = async () => {
@@ -2105,8 +2158,8 @@ window.AdminViewModel = {
     const startAdminChatPolling = () => {
       stopAdminChatPolling();
       adminChatIntervalId = setInterval(() => {
+        fetchUnreadChatStates();
         if (activeTab.value === 'chat') {
-          fetchUnreadChatStates();
           if (selectedChatCustomer.value) {
             fetchAdminChatMessagesBackground(selectedChatCustomer.value.id);
           }
@@ -2121,6 +2174,9 @@ window.AdminViewModel = {
       }
     };
 
+    /**
+     * Gửi tin nhắn phản hồi hỗ trợ trực tiếp từ Admin tới khách hàng.
+     */
     const sendAdminChatMessage = async () => {
       const textVal = adminChatInputText.value.trim();
       if (!textVal || !selectedChatCustomer.value) return;
@@ -3281,7 +3337,7 @@ window.AdminViewModel = {
           fetch(`${window.API_BASE || 'http://127.0.0.1:8000'}/api/support/admin/tickets/${ticket.id}/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'da_xu_ly' })
+            body: JSON.stringify({ trang_thai: 'da_xu_ly' })
           })
         );
         
@@ -3330,6 +3386,7 @@ window.AdminViewModel = {
     };
 
     return {
+      apiBase: window.API_BASE || 'https://peach-store-backend.onrender.com',
       markAllOrdersAsProcessed,
       markAllCustomersAsProcessed,
       markAllSupportAsProcessed,
@@ -3421,6 +3478,7 @@ window.AdminViewModel = {
       orders,
       customers,
       handleAvatarError,
+      formatImageUrl,
       getMembershipRank,
       getRankColor,
       getColorHex,

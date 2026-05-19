@@ -15,7 +15,20 @@ router = APIRouter(prefix="/xac-thuc", tags=["Xac Thuc"])
 
 @router.post("/dang-ky", response_model=ThongTinNguoiDung, status_code=status.HTTP_201_CREATED)
 def dang_ky(du_lieu: DangKyNguoiDung, db: Session = Depends(get_db)):
-    """API cho phep nguoi dung tao tai khoan moi"""
+    """
+    API đăng ký tài khoản khách hàng mới.
+    Kiểm tra email trùng lặp và tiến hành băm mật khẩu bảo mật trước khi lưu vào DB.
+
+    Args:
+        du_lieu (DangKyNguoiDung): Thông tin đăng ký bao gồm email, mật khẩu, họ tên, sđt, địa chỉ.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        NguoiDung: Thông tin tài khoản người dùng vừa tạo thành công.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu email đăng ký đã tồn tại.
+    """
     # Kiem tra email da ton tai chua
     nguoi_dung_cu = db.query(NguoiDung).filter(NguoiDung.email == du_lieu.email).first()
     if nguoi_dung_cu:
@@ -40,7 +53,22 @@ def dang_ky(du_lieu: DangKyNguoiDung, db: Session = Depends(get_db)):
 
 @router.post("/dang-nhap", response_model=Token)
 def dang_nhap(request: Request, du_lieu: DangNhapNguoiDung, db: Session = Depends(get_db)):
-    """API xac thuc email/mat khau va tra ve Token"""
+    """
+    API xác thực thông tin đăng nhập bằng Email và Mật khẩu.
+    Chặn tài khoản Admin đăng nhập trên Web Client.
+    Ghi nhận lịch sử thiết bị đăng nhập và cấp phát mã Access Token (JWT).
+
+    Args:
+        request (Request): Đối tượng request HTTP chứa User-Agent và IP của client.
+        du_lieu (DangNhapNguoiDung): Email và mật khẩu của người dùng.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Chứa Access Token và kiểu Token (bearer).
+
+    Raises:
+        HTTPException: Lỗi 401 nếu sai thông tin, 403 nếu là tài khoản Admin.
+    """
     # Tim nguoi dung theo email
     nguoi_dung = db.query(NguoiDung).filter(NguoiDung.email == du_lieu.email).first()
     
@@ -109,7 +137,15 @@ def dang_nhap(request: Request, du_lieu: DangNhapNguoiDung, db: Session = Depend
 
 @router.get("/me", response_model=ThongTinNguoiDung)
 def lay_thong_tin_ca_nhan(nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)):
-    """API lay thong tin nguoi dung hien tai tu Token"""
+    """
+    Lấy thông tin chi tiết của người dùng đang đăng nhập dựa vào Access Token được truyền lên.
+
+    Args:
+        nguoi_dung (NguoiDung): Thông tin người dùng hiện tại (lấy qua dependency xác thực).
+
+    Returns:
+        NguoiDung: Thông tin chi tiết của tài khoản.
+    """
     return nguoi_dung
 
 @router.post("/upload-avatar")
@@ -118,7 +154,21 @@ async def upload_avatar(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API upload anh dai dien cho nguoi dung"""
+    """
+    Tải lên ảnh đại diện của người dùng.
+    Hỗ trợ kiểm tra định dạng ảnh hợp lệ, giới hạn kích thước tối đa 5MB và tự động dọn dẹp đặt tên tệp duy nhất.
+
+    Args:
+        file (UploadFile): Tệp hình ảnh tải lên từ client.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Chứa đường dẫn tĩnh URL của ảnh đại diện vừa lưu.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu tệp không phải là ảnh hoặc dung lượng vượt quá 5MB.
+    """
     # 1. Kiem tra dinh dang file (chi anh)
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Chi chap nhan file hinh anh")
@@ -130,9 +180,10 @@ async def upload_avatar(
         raise HTTPException(status_code=400, detail="Dung luong anh khong duoc vuot qua 5MB")
     
     # 3. Tao thu muc luu tru neu chua co
-    upload_dir = os.path.join("static", "uploads", "avatars")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    upload_dir = os.path.join(BASE_DIR, "static", "uploads", "avatars")
     if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
+        os.makedirs(upload_dir, exist_ok=True)
     
     # 4. Luu file voi ten duy nhat
     file_ext = os.path.splitext(file.filename)[1]
@@ -154,7 +205,16 @@ def delete_avatar(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API xoa anh dai dien cua nguoi dung"""
+    """
+    Xóa ảnh đại diện hiện tại của người dùng (chuyển trường hình ảnh về null trong DB).
+
+    Args:
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông báo xóa ảnh đại diện thành công.
+    """
     nguoi_dung.hinh_anh = None
     db.commit()
     return {"message": "Da xoa anh dai dien"}
@@ -170,7 +230,20 @@ def update_profile(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API cap nhat thong tin ca nhan"""
+    """
+    Cập nhật thông tin hồ sơ cá nhân của người dùng bao gồm Họ tên, Số điện thoại và Địa chỉ giao hàng.
+
+    Args:
+        data (ProfileUpdate): Dữ liệu cập nhật mới.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        NguoiDung: Thông tin tài khoản người dùng sau khi lưu cập nhật.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu số điện thoại nhập vào không đúng định dạng 10 số.
+    """
     if data.ho_ten:
         nguoi_dung.ho_ten = data.ho_ten
     
@@ -199,7 +272,21 @@ def doi_mat_khau(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API thay đổi mật khẩu người dùng"""
+    """
+    Thay đổi mật khẩu đăng nhập của người dùng.
+    Yêu cầu đối chiếu chính xác mật khẩu cũ trước khi mã hóa mật khẩu mới.
+
+    Args:
+        data (DoiMatKhauPayload): Chứa mật khẩu cũ và mật khẩu mới.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông điệp xác nhận đổi mật khẩu thành công.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu mật khẩu cũ cung cấp không trùng khớp.
+    """
     if not DichVuBaoMat.xac_minh_mat_khau(data.mat_khau_cu, nguoi_dung.mat_khau):
         raise HTTPException(status_code=400, detail="Mật khẩu cũ không chính xác!")
     
@@ -219,7 +306,21 @@ def cai_dat_pin(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API cài đặt hoặc thay đổi mã PIN giao dịch"""
+    """
+    Thiết lập mới hoặc thay đổi mã PIN giao dịch bảo mật cấp 2 (độ dài từ 4 đến 6 chữ số).
+    Yêu cầu xác nhận lại mật khẩu cấp 1 để bảo mật tài khoản.
+
+    Args:
+        data (CaiDatPinPayload): Chứa mã PIN giao dịch mới và mật khẩu xác nhận tài khoản.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông điệp thành công và trạng thái đã cài mã PIN.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu mật khẩu xác nhận sai hoặc mã PIN không hợp lệ.
+    """
     if not DichVuBaoMat.xac_minh_mat_khau(data.mat_khau_xac_nhan, nguoi_dung.mat_khau):
         raise HTTPException(status_code=400, detail="Mật khẩu xác nhận không chính xác!")
     
@@ -243,7 +344,20 @@ def toggle_pin(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API bật/tắt yêu cầu mã PIN khi thanh toán"""
+    """
+    Bật hoặc tắt chức năng yêu cầu nhập mã PIN giao dịch khi tiến hành tạo đơn hàng.
+
+    Args:
+        data (TogglePinPayload): Chứa trạng thái kích hoạt (True/False) và mã PIN giao dịch hiện tại để xác minh.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông điệp thông báo bật/tắt thành công và trạng thái mới.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu người dùng chưa cài PIN hoặc cung cấp mã PIN không chính xác.
+    """
     if not nguoi_dung.ma_pin:
         raise HTTPException(status_code=400, detail="Bạn chưa cài đặt mã PIN giao dịch!")
     
@@ -264,7 +378,16 @@ def lay_lich_su_dang_nhap(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API lay danh sach lich su dang nhap cua nguoi dung"""
+    """
+    Lấy danh sách tối đa 20 phiên đăng nhập gần nhất của người dùng kèm địa điểm, IP và tên thiết bị.
+
+    Args:
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách lịch sử đăng nhập đã định dạng.
+    """
     from app.models.lichsu_dangnhap import LichSuDangNhap
     lich_su = db.query(LichSuDangNhap).filter(
         LichSuDangNhap.nguoi_dung_id == nguoi_dung.id
@@ -291,7 +414,16 @@ def lay_tin_nhan_chat(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API lấy toàn bộ tin nhắn chat của người dùng"""
+    """
+    Lấy toàn bộ lịch sử tin nhắn chat trực tuyến giữa người dùng này và Admin hỗ trợ.
+
+    Args:
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách các tin nhắn chat.
+    """
     from app.models.tinnhan_chat import TinNhanChat
     messages = db.query(TinNhanChat).filter(
         TinNhanChat.nguoi_dung_id == nguoi_dung.id
@@ -314,7 +446,17 @@ def gui_tin_nhan_chat(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API gửi tin nhắn chat mới từ người dùng"""
+    """
+    Gửi một tin nhắn chat hỗ trợ mới đến bộ phận hỗ trợ khách hàng.
+
+    Args:
+        payload (GuiTinNhanPayload): Nội dung văn bản tin nhắn.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Chi tiết tin nhắn vừa gửi thành công.
+    """
     from app.models.tinnhan_chat import TinNhanChat
     if not payload.text.strip():
         raise HTTPException(status_code=400, detail="Nội dung tin nhắn không được để trống!")
@@ -345,7 +487,21 @@ async def tao_yeu_cau_ho_tro(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API gửi yêu cầu hỗ trợ mới kèm tối đa 5 hình ảnh, dung lượng tối đa 10MB/ảnh"""
+    """
+    Gửi một phiếu yêu cầu hỗ trợ (Support Ticket) mới.
+    Cho phép đính kèm tối đa 5 hình ảnh minh họa sự cố, mỗi tệp tin không quá 10MB.
+
+    Args:
+        subject (str): Chủ đề hỗ trợ (Ví dụ: Yêu cầu đổi PIN, Sự cố máy...).
+        serial (Optional[str]): Số IMEI/Serial của sản phẩm (nếu có).
+        message (str): Chi tiết nội dung yêu cầu hỗ trợ.
+        images (List[UploadFile]): Danh sách các tệp tin hình ảnh tải lên.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái gửi thành công và ID của Ticket vừa tạo.
+    """
     from app.models.yeu_cau_ho_tro import YeuCauHoTro
     import uuid
     
@@ -414,7 +570,18 @@ def dang_ky_doanh_nghiep(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API gửi yêu cầu chuyển đổi tài khoản người dùng sang tài khoản Doanh nghiệp"""
+    """
+    Gửi hồ sơ đăng ký doanh nghiệp để nâng cấp tài khoản của khách hàng thành tài khoản doanh nghiệp.
+    Mỗi người dùng chỉ được có tối đa 1 yêu cầu đang chờ phê duyệt.
+
+    Args:
+        payload (DangKyDoanhNghiepPayload): Thông tin công ty, mã số thuế, địa chỉ kinh doanh, lĩnh vực.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công của yêu cầu doanh nghiệp.
+    """
     if nguoi_dung.vai_tro == "admin":
         raise HTTPException(status_code=400, detail="Không thể nâng cấp tài khoản Admin sang Doanh nghiệp!")
     
@@ -457,7 +624,16 @@ def lay_trang_thai_doanh_nghiep(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """API lấy trạng thái yêu cầu nâng cấp doanh nghiệp của user"""
+    """
+    Kiểm tra và lấy thông tin chi tiết về trạng thái hồ sơ yêu cầu nâng cấp doanh nghiệp của khách hàng hiện tại.
+
+    Args:
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái hồ sơ chi tiết (đã gửi hay chưa, kết quả chờ duyệt, đã duyệt...).
+    """
     from app.models.yeu_cau_doanh_nghiep import YeuCauDoanhNghiep
     yeu_cau = db.query(YeuCauDoanhNghiep).filter(
         YeuCauDoanhNghiep.nguoi_dung_id == nguoi_dung.id
@@ -482,7 +658,16 @@ def get_user_notifications(
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai),
     db: Session = Depends(get_db)
 ):
-    """Lấy danh sách thông báo phù hợp với hạng thẻ hoặc tất cả của người dùng"""
+    """
+    Lấy danh sách tối đa 20 thông báo mới nhất được lọc riêng phù hợp theo từng đối tượng hạng thành viên hoặc tất cả.
+
+    Args:
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách thông báo được lọc riêng cho khách hàng.
+    """
     NOTIFICATIONS_FILE = os.path.normpath(
         os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

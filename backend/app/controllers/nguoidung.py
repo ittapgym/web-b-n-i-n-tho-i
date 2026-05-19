@@ -16,7 +16,15 @@ class CustomerUpdate(BaseModel):
     trang_thai: Optional[str] = None
 
 def _build_image_url(hinh_anh_raw) -> str:
-    """Helper to build image URL without f-string backslash issues."""
+    """
+    Chuẩn hóa và tạo đường dẫn URL đầy đủ cho ảnh đại diện (avatar) hoặc ảnh đính kèm.
+
+    Args:
+        hinh_anh_raw: Dữ liệu ảnh thô nhận từ DB.
+
+    Returns:
+        str: URL ảnh đã chuẩn hóa hoặc None.
+    """
     if not hinh_anh_raw:
         return None
     ha = str(hinh_anh_raw)
@@ -40,6 +48,15 @@ def _build_image_url(hinh_anh_raw) -> str:
 @router.get("/api/admin/customers", response_model=List[dict])
 @router.get("/api/admin/customers/", response_model=List[dict])
 def get_customers(db: Session = Depends(get_db)):
+    """
+    Lấy danh sách tất cả các tài khoản người dùng trong hệ thống kèm thông tin tích điểm, ảnh đại diện.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách chứa thông tin người dùng được định dạng.
+    """
     customers = db.query(NguoiDung).all()
     return [
         {
@@ -58,6 +75,17 @@ def get_customers(db: Session = Depends(get_db)):
 @router.post("/api/admin/customers")
 @router.post("/api/admin/customers/")
 def create_customer(data: dict, db: Session = Depends(get_db)):
+    """
+    Tạo mới một tài khoản khách hàng từ phía Admin quản trị.
+    Hỗ trợ tự động gắn mật khẩu mặc định "123456" nếu để trống.
+
+    Args:
+        data (dict): Dữ liệu khách hàng mới (họ tên, email, sđt, địa chỉ...).
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công và ID khách hàng vừa tạo.
+    """
     # Đảm bảo có mật khẩu mặc định nếu admin không nhập
     if "mat_khau" not in data or not data["mat_khau"]:
         data["mat_khau"] = "123456" # Mật khẩu mặc định
@@ -70,6 +98,17 @@ def create_customer(data: dict, db: Session = Depends(get_db)):
 
 @router.put("/api/admin/customers/{customer_id}")
 def update_customer(customer_id: int, data: CustomerUpdate, db: Session = Depends(get_db)):
+    """
+    Cập nhật thông tin hồ sơ của khách hàng theo ID chỉ định (Hành động từ Admin).
+
+    Args:
+        customer_id (int): ID khách hàng cần cập nhật.
+        data (CustomerUpdate): Dữ liệu cập nhật mới.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông điệp xác nhận cập nhật thành công.
+    """
     customer = db.query(NguoiDung).filter(NguoiDung.id == customer_id).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng")
@@ -82,6 +121,21 @@ def update_customer(customer_id: int, data: CustomerUpdate, db: Session = Depend
 
 @router.delete("/api/admin/customers/{customer_id}")
 def delete_customer(customer_id: int, db: Session = Depends(get_db)):
+    """
+    Xóa vĩnh viễn tài khoản khách hàng khỏi hệ thống và dọn dẹp các bảng liên quan
+    (giỏ hàng, tin nhắn chat, lịch sử đăng nhập, yêu cầu hỗ trợ, thích...).
+    Đơn hàng thuộc về khách hàng này sẽ được hủy liên kết (đặt user_id thành null) để bảo toàn doanh thu.
+
+    Args:
+        customer_id (int): ID của khách hàng cần xóa.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông điệp xác nhận xóa thành công.
+
+    Raises:
+        HTTPException: Lỗi 404 nếu không tìm thấy người dùng hoặc 500 nếu có lỗi DB.
+    """
     from app.models.donhang import DonHang
     from app.models.giohang import GioHang
     from app.models.lichsu_dangnhap import LichSuDangNhap
@@ -140,6 +194,12 @@ RESET_REQUESTS_FILE = os.path.normpath(
 )
 
 def read_reset_requests():
+    """
+    Đọc danh sách yêu cầu khôi phục mật khẩu hoặc mã PIN từ tệp tin JSON tĩnh.
+
+    Returns:
+        list: Danh sách các yêu cầu khôi phục.
+    """
     if not os.path.exists(RESET_REQUESTS_FILE):
         return []
     try:
@@ -149,6 +209,12 @@ def read_reset_requests():
         return []
 
 def write_reset_requests(data):
+    """
+    Ghi dữ liệu danh sách yêu cầu khôi phục mật khẩu hoặc mã PIN vào tệp tin JSON tĩnh.
+
+    Args:
+        data (list): Danh sách các yêu cầu cần lưu trữ.
+    """
     os.makedirs(os.path.dirname(RESET_REQUESTS_FILE), exist_ok=True)
     try:
         with open(RESET_REQUESTS_FILE, "w", encoding="utf-8") as f:
@@ -158,6 +224,15 @@ def write_reset_requests(data):
 
 @router.post("/api/support/reset-requests")
 def create_reset_request(data: dict):
+    """
+    Tạo mới một yêu cầu khôi phục mật khẩu/PIN (khi người dùng gửi từ giao diện Hỗ trợ).
+
+    Args:
+        data (dict): Thông tin biểu mẫu (họ tên, email, sđt, địa chỉ, lý do...).
+
+    Returns:
+        dict: Trạng thái thành công và ID yêu cầu vừa tạo.
+    """
     requests = read_reset_requests()
     new_id = len(requests) + 1
     new_req = {
@@ -177,6 +252,12 @@ def create_reset_request(data: dict):
 
 @router.get("/api/support/reset-requests")
 def get_reset_requests():
+    """
+    Lấy danh sách tất cả các yêu cầu khôi phục mật khẩu/PIN để hiển thị trên dashboard Admin.
+
+    Returns:
+        list: Danh sách các yêu cầu.
+    """
     return read_reset_requests()
 
 class VerifyPayload(BaseModel):
@@ -187,6 +268,17 @@ class VerifyPayload(BaseModel):
 
 @router.post("/api/support/verify-customer")
 def verify_customer(payload: VerifyPayload, db: Session = Depends(get_db)):
+    """
+    Xác minh thông tin đối chiếu của khách hàng (Họ tên, Email, Số điện thoại) xem có khớp với tài khoản trong DB hay không.
+    Dùng để Admin xác thực trước khi thực hiện reset mật khẩu hoặc mã PIN.
+
+    Args:
+        payload (VerifyPayload): Thông tin đối chiếu nhập vào.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái khớp ("matched") và thông tin người dùng nếu khớp.
+    """
     customers = db.query(NguoiDung).all()
     matched_user = None
     
@@ -230,6 +322,17 @@ def verify_customer(payload: VerifyPayload, db: Session = Depends(get_db)):
 
 @router.post("/api/support/reset-password")
 def reset_customer_password(data: dict, db: Session = Depends(get_db)):
+    """
+    Tạo mật khẩu ngẫu nhiên mới bắt đầu bằng chữ "PEACH" cho khách hàng và lưu dạng đã mã hóa.
+    Đồng thời cập nhật trạng thái yêu cầu khôi phục trong tệp tin JSON thành công.
+
+    Args:
+        data (dict): Chứa user_id và request_id của yêu cầu.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công và mật khẩu thô mới để Admin gửi lại cho khách hàng.
+    """
     user_id = data.get("user_id")
     request_id = data.get("request_id")
     user = db.query(NguoiDung).filter(NguoiDung.id == user_id).first()
@@ -252,6 +355,17 @@ def reset_customer_password(data: dict, db: Session = Depends(get_db)):
 
 @router.post("/api/support/reset-pin")
 def reset_customer_pin(data: dict, db: Session = Depends(get_db)):
+    """
+    Tạo mã PIN giao dịch ngẫu nhiên gồm 6 số cho khách hàng và lưu dạng đã mã hóa.
+    Cập nhật trạng thái của yêu cầu khôi phục tương ứng trong file JSON.
+
+    Args:
+        data (dict): Chứa user_id và request_id của yêu cầu.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công và mã PIN thô mới tạo.
+    """
     user_id = data.get("user_id")
     request_id = data.get("request_id")
     user = db.query(NguoiDung).filter(NguoiDung.id == user_id).first()
@@ -275,7 +389,15 @@ def reset_customer_pin(data: dict, db: Session = Depends(get_db)):
 
 @router.get("/api/support/admin/unread-states")
 def lay_trang_thai_chua_rep(db: Session = Depends(get_db)):
-    """API lấy danh sách các customer_id có tin nhắn cuối cùng là từ user (admin chưa rep)"""
+    """
+    API lấy danh sách các customer_id có tin nhắn cuối cùng là từ user (admin chưa rep).
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Bản đồ ánh xạ user_id -> boolean (True nếu chưa trả lời).
+    """
     from app.models.tinnhan_chat import TinNhanChat
     from sqlalchemy import func
     
@@ -308,7 +430,16 @@ def lay_tin_nhan_chat_admin(
     nguoi_dung_id: int,
     db: Session = Depends(get_db)
 ):
-    """API Admin lấy toàn bộ tin nhắn chat của 1 khách hàng cụ thể"""
+    """
+    API Admin lấy toàn bộ tin nhắn chat của 1 khách hàng cụ thể.
+
+    Args:
+        nguoi_dung_id (int): ID của khách hàng cần lấy tin nhắn.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách tin nhắn chat được sắp xếp theo thời gian tăng dần.
+    """
     from app.models.tinnhan_chat import TinNhanChat
     messages = db.query(TinNhanChat).filter(
         TinNhanChat.nguoi_dung_id == nguoi_dung_id
@@ -331,7 +462,18 @@ def gui_tin_nhan_chat_admin(
     payload: AdminGuiTinNhanPayload,
     db: Session = Depends(get_db)
 ):
-    """API Admin gửi tin nhắn chat phản hồi cho 1 khách hàng cụ thể"""
+    """
+    API Admin gửi tin nhắn chat phản hồi cho 1 khách hàng cụ thể.
+    Đồng thời ghi nhận hành động trả lời này vào nhật ký hoạt động hệ thống.
+
+    Args:
+        nguoi_dung_id (int): ID của khách hàng nhận tin phản hồi.
+        payload (AdminGuiTinNhanPayload): Nội dung tin nhắn gửi đi.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông tin chi tiết tin nhắn vừa gửi.
+    """
     from app.models.tinnhan_chat import TinNhanChat
     if not payload.text.strip():
         raise HTTPException(status_code=400, detail="Nội dung tin nhắn không được để trống!")
@@ -369,7 +511,16 @@ class CapNhatTrangThaiTicketPayload(BaseModel):
 
 @router.get("/api/support/admin/tickets")
 def lay_tat_ca_tickets_admin(db: Session = Depends(get_db)):
-    """API Admin lấy toàn bộ danh sách yêu cầu hỗ trợ (tickets)"""
+    """
+    API Admin lấy toàn bộ danh sách yêu cầu hỗ trợ (tickets).
+    Tự động dọn dẹp các dữ liệu mẫu không hợp lệ nếu có trong DB.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách các ticket hỗ trợ chi tiết.
+    """
     from app.models.yeu_cau_ho_tro import YeuCauHoTro
     
     # Tự động dọn dẹp dữ liệu mẫu nếu có trong DB
@@ -404,7 +555,20 @@ def cap_nhat_trang_thai_ticket(
     payload: CapNhatTrangThaiTicketPayload,
     db: Session = Depends(get_db)
 ):
-    """API Admin cập nhật trạng thái của yêu cầu hỗ trợ"""
+    """
+    API Admin cập nhật trạng thái xử lý của yêu cầu hỗ trợ (Chờ xử lý, Đang xử lý, Đã xử lý).
+
+    Args:
+        ticket_id (int): ID của ticket cần cập nhật.
+        payload (CapNhatTrangThaiTicketPayload): Trạng thái mới.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái cập nhật thành công.
+
+    Raises:
+        HTTPException: Lỗi 404 nếu ticket không tồn tại hoặc 400 nếu trạng thái không hợp lệ.
+    """
     from app.models.yeu_cau_ho_tro import YeuCauHoTro
     
     ticket = db.query(YeuCauHoTro).filter(YeuCauHoTro.id == ticket_id).first()
@@ -436,7 +600,15 @@ def cap_nhat_trang_thai_ticket(
 
 @router.get("/api/admin/business-requests")
 def lay_yeu_cau_doanh_nghiep(db: Session = Depends(get_db)):
-    """API Admin lấy danh sách yêu cầu đăng ký nâng cấp doanh nghiệp"""
+    """
+    API Admin lấy danh sách các yêu cầu đăng ký nâng cấp doanh nghiệp của khách hàng.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[dict]: Danh sách yêu cầu nâng cấp kèm thông tin mã số thuế, công ty.
+    """
     from app.models.yeu_cau_doanh_nghiep import YeuCauDoanhNghiep
     requests = db.query(YeuCauDoanhNghiep).order_by(YeuCauDoanhNghiep.ngay_tao.desc()).all()
     return [
@@ -459,7 +631,17 @@ def lay_yeu_cau_doanh_nghiep(db: Session = Depends(get_db)):
 
 @router.post("/api/admin/business-requests/{request_id}/approve")
 def phe_duyet_yeu_cau_doanh_nghiep(request_id: int, db: Session = Depends(get_db)):
-    """API Admin phê duyệt yêu cầu đăng ký Doanh nghiệp và nâng cấp role người dùng"""
+    """
+    API Admin phê duyệt yêu cầu đăng ký doanh nghiệp và chuyển role người dùng thành 'doanh_nghiep'.
+    Cập nhật các thông tin đăng ký kinh doanh vào hồ sơ người dùng.
+
+    Args:
+        request_id (int): ID của yêu cầu doanh nghiệp cần phê duyệt.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thông báo phê duyệt thành công.
+    """
     from app.models.yeu_cau_doanh_nghiep import YeuCauDoanhNghiep
     from app.models.nguoidung import NguoiDung
     from datetime import datetime
@@ -496,7 +678,16 @@ def phe_duyet_yeu_cau_doanh_nghiep(request_id: int, db: Session = Depends(get_db
 
 @router.post("/api/admin/business-requests/{request_id}/reject")
 def tu_choi_yeu_cau_doanh_nghiep(request_id: int, db: Session = Depends(get_db)):
-    """API Admin từ chối yêu cầu đăng ký Doanh nghiệp"""
+    """
+    API Admin từ chối yêu cầu đăng ký doanh nghiệp của khách hàng.
+
+    Args:
+        request_id (int): ID của yêu cầu doanh nghiệp bị từ chối.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái từ chối thành công.
+    """
     from app.models.yeu_cau_doanh_nghiep import YeuCauDoanhNghiep
     from datetime import datetime
     
@@ -520,7 +711,12 @@ def tu_choi_yeu_cau_doanh_nghiep(request_id: int, db: Session = Depends(get_db))
 
 @router.post("/api/support/reset-requests/resolve-all")
 def resolve_all_reset_requests():
-    """API Admin giải quyết toàn bộ yêu cầu khôi phục mật khẩu/PIN"""
+    """
+    API Admin đánh dấu đã giải quyết hàng loạt đối với tất cả các yêu cầu khôi phục mật khẩu/PIN đang chờ.
+
+    Returns:
+        dict: Trạng thái và số lượng yêu cầu được xử lý.
+    """
     reqs = read_reset_requests()
     count = 0
     for r in reqs:
@@ -534,7 +730,15 @@ def resolve_all_reset_requests():
 
 @router.post("/api/admin/business-requests/approve-all")
 def phe_duyet_tat_ca_yeu_cau_doanh_nghiep(db: Session = Depends(get_db)):
-    """API Admin phê duyệt tất cả yêu cầu đăng ký Doanh nghiệp đang chờ"""
+    """
+    API Admin phê duyệt hàng loạt tất cả các yêu cầu đăng ký doanh nghiệp đang ở trạng thái 'cho_duyet'.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái và số lượng yêu cầu đã duyệt.
+    """
     from app.models.yeu_cau_doanh_nghiep import YeuCauDoanhNghiep
     from app.models.nguoidung import NguoiDung
     from datetime import datetime

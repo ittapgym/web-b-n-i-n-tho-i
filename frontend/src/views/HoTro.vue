@@ -313,6 +313,10 @@ const isLoadingWarranty = ref(false)
 const warrantyResult = ref(null)
 const warrantyError = ref('')
 
+/**
+ * Tra cứu thông tin bảo hành của thiết bị bằng cách gửi yêu cầu kiểm tra mã IMEI tới backend.
+ * Cập nhật trạng thái kết quả hoặc lỗi tương ứng lên giao diện người dùng.
+ */
 const lookupWarranty = async () => {
   const query = imeiQuery.value ? imeiQuery.value.trim() : ''
   if (!query) {
@@ -342,6 +346,12 @@ const lookupWarranty = async () => {
   }
 }
 
+/**
+ * Tính toán tỷ lệ phần trăm thời hạn bảo hành còn lại để hiển thị thanh tiến trình trực quan.
+ * 
+ * @param {Object} result - Kết quả tra cứu bảo hành chứa thời gian và số ngày còn lại.
+ * @returns {string} Chuỗi định dạng phần trăm (ví dụ: "75%").
+ */
 const getProgressBarWidth = (result) => {
   if (result.trang_thai_bao_hanh === 'ChuaKichHoat') return '0%'
   if (result.trang_thai_bao_hanh !== 'ConHieuLuc') return '0%'
@@ -351,6 +361,12 @@ const getProgressBarWidth = (result) => {
   return `${percentage}%`
 }
 
+/**
+ * Lấy tên class CSS tương ứng với hạng thẻ thành viên của khách hàng để tạo màu sắc phù hợp.
+ * 
+ * @param {string} tier - Hạng thẻ (Kim cương, Vàng, Bạc, Tiêu chuẩn).
+ * @returns {string} Tên class tương ứng ('diamond', 'gold', 'silver').
+ */
 const getLoyaltyClass = (tier) => {
   if (tier === 'Kim cương') return 'diamond'
   if (tier === 'Vàng') return 'gold'
@@ -372,6 +388,12 @@ const helpModalData = ref({
   paragraphs: []
 })
 
+/**
+ * Mở hộp thoại modal hỗ trợ theo loại yêu cầu cụ thể (Khôi phục mật khẩu, reset PIN hoặc Điều khoản dịch vụ).
+ * Tự động làm mới dữ liệu form và các trạng thái thành công/thất bại trước đó.
+ * 
+ * @param {string} type - Loại hỗ trợ ('password', 'pin', 'terms').
+ */
 const openHelpModal = (type) => {
   // Reset form and success state on modal open
   showSuccessState.value = false
@@ -420,10 +442,16 @@ const openHelpModal = (type) => {
   showHelpModal.value = true
 }
 
+/**
+ * Đóng hộp thoại modal hỗ trợ.
+ */
 const closeHelpModal = () => {
   showHelpModal.value = false
 }
 
+/**
+ * Gửi biểu mẫu yêu cầu hỗ trợ (Khôi phục mật khẩu hoặc reset PIN) của người dùng lên backend để admin phê duyệt.
+ */
 const submitStaticRequest = async () => {
   isSubmittingRequest.value = true
   try {

@@ -15,7 +15,16 @@ def lay_gio_hang(
     db: Session = Depends(get_db), 
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Lay danh sach san pham trong gio hang cua nguoi dung"""
+    """
+    Lấy danh sách các sản phẩm đang có trong giỏ hàng của người dùng hiện tại.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Người dùng hiện tại đang đăng nhập.
+
+    Returns:
+        List[GioHang]: Danh sách các bản ghi giỏ hàng.
+    """
     return db.query(GioHang).filter(GioHang.nguoi_dung_id == nguoi_dung.id).all()
 
 @router.post("/them", response_model=GioHangSchema)
@@ -24,7 +33,21 @@ def them_vao_gio(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Them san pham vao gio hang"""
+    """
+    Thêm mới một mặt hàng hoặc tăng số lượng của mặt hàng sẵn có trong giỏ hàng.
+    Kiểm tra tính trùng khớp về màu sắc, dung lượng và RAM để gộp dòng nếu cần.
+
+    Args:
+        du_lieu (GioHangTaoMoi): Thông tin mặt hàng cần thêm (ID sản phẩm, số lượng, RAM, dung lượng, màu sắc).
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Người dùng hiện tại đang đăng nhập.
+
+    Returns:
+        GioHang: Bản ghi giỏ hàng vừa được thêm hoặc cập nhật.
+
+    Raises:
+        HTTPException: Lỗi 404 nếu sản phẩm không tồn tại trong kho hàng.
+    """
     # Kiem tra san pham co ton tai khong
     san_pham = db.query(SanPham).filter(SanPham.id == du_lieu.san_pham_id).first()
     if not san_pham:
@@ -67,7 +90,22 @@ def cap_nhat_so_luong(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Cap nhat so luong cua mot san pham trong gio"""
+    """
+    Cập nhật số lượng của một mặt hàng cụ thể trong giỏ hàng.
+    Nếu số lượng mới nhỏ hơn hoặc bằng 0, mặt hàng sẽ bị xóa hoàn toàn khỏi giỏ.
+
+    Args:
+        item_id (int): ID của bản ghi giỏ hàng cần sửa.
+        du_lieu (GioHangCapNhat): Số lượng sản phẩm mới cần đặt.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Người dùng hiện tại đang đăng nhập.
+
+    Returns:
+        GioHang: Bản ghi giỏ hàng sau cập nhật, hoặc None nếu bản ghi bị xóa.
+
+    Raises:
+        HTTPException: Lỗi 404 nếu không tìm thấy bản ghi giỏ hàng thuộc sở hữu của người dùng.
+    """
     item = db.query(GioHang).filter(
         GioHang.id == item_id,
         GioHang.nguoi_dung_id == nguoi_dung.id
@@ -93,7 +131,20 @@ def xoa_khoi_gio(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Xoa san pham khoi gio hang"""
+    """
+    Xóa một bản ghi mặt hàng cụ thể ra khỏi giỏ hàng của người dùng.
+
+    Args:
+        item_id (int): ID của bản ghi giỏ hàng cần xóa.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Người dùng hiện tại đang đăng nhập.
+
+    Returns:
+        dict: Trạng thái chi tiết của yêu cầu xóa.
+
+    Raises:
+        HTTPException: Lỗi 404 nếu không tìm thấy bản ghi giỏ hàng tương ứng.
+    """
     item = db.query(GioHang).filter(
         GioHang.id == item_id,
         GioHang.nguoi_dung_id == nguoi_dung.id
@@ -111,7 +162,16 @@ def lam_trong_gio(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Xoa toan bo gio hang"""
+    """
+    Xóa sạch toàn bộ các mặt hàng trong giỏ hàng của người dùng hiện tại.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Người dùng hiện tại đang đăng nhập.
+
+    Returns:
+        dict: Thông điệp xác nhận đã dọn sạch giỏ hàng.
+    """
     db.query(GioHang).filter(GioHang.nguoi_dung_id == nguoi_dung.id).delete()
     db.commit()
     return {"detail": "Da lam trong gio hang"}

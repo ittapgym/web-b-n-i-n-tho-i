@@ -20,7 +20,21 @@ async def tao_don_hang(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Người dùng đặt hàng"""
+    """
+    Tạo mới một đơn đặt hàng cho người dùng hiện tại đang đăng nhập.
+    Nếu người dùng thiết lập yêu cầu mã PIN giao dịch, hàm sẽ bắt buộc kiểm tra mã PIN này trước khi tạo đơn.
+
+    Args:
+        order_data (DonHangCreate): Thông tin đơn hàng (địa chỉ, số điện thoại, giỏ hàng, mã PIN giao dịch nếu có).
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Đối tượng người dùng hiện tại đang đăng nhập.
+
+    Returns:
+        DonHangSchema: Thông tin chi tiết đơn hàng vừa được tạo thành công.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu thiếu mã PIN hoặc mã PIN không hợp lệ.
+    """
     if nguoi_dung.yeu_cau_pin:
         if not order_data.ma_pin:
             from fastapi import HTTPException
@@ -34,17 +48,45 @@ async def tao_don_hang(
 
 @router.get("/admin/all", response_model=List[DonHangSchema])
 async def lay_tat_ca_don_hang_admin(db: Session = Depends(get_db)):
-    """Admin xem toàn bộ đơn hàng (Không cần đăng nhập)"""
+    """
+    Lấy danh sách toàn bộ tất cả các đơn đặt hàng trong hệ thống dành cho Admin.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        List[DonHangSchema]: Danh sách chứa tất cả đơn đặt hàng.
+    """
     return await DonHangService.get_all_orders(db)
 
 @router.put("/cap-nhat-trang-thai/{order_id}")
 async def admin_cap_nhat_trang_thai(order_id: int, status_data: DonHangUpdateStatus, db: Session = Depends(get_db)):
-    """Admin cập nhật trạng thái (Không cần đăng nhập)"""
+    """
+    Cập nhật trạng thái của đơn hàng (Chờ xử lý, Đang giao, Hoàn thành, Đã hủy).
+
+    Args:
+        order_id (int): ID của đơn hàng cần cập nhật.
+        status_data (DonHangUpdateStatus): Trạng thái mới của đơn hàng cần chuyển sang.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        DonHangSchema: Đối tượng đơn hàng sau khi cập nhật trạng thái thành công.
+    """
     return await DonHangService.update_order_status(db, order_id, status_data.trang_thai)
 
 @router.put("/admin/update/{order_id}")
 async def admin_update_order(order_id: int, update_data: dict, db: Session = Depends(get_db)):
-    """Admin cập nhật thông tin chung đơn hàng"""
+    """
+    Cập nhật thông tin chung cho một đơn hàng từ phía quản trị viên.
+
+    Args:
+        order_id (int): ID của đơn hàng cần cập nhật.
+        update_data (dict): Dữ liệu cập nhật (địa chỉ, số điện thoại, tên khách hàng, số lượng, imei...).
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        DonHangSchema: Đối tượng đơn hàng sau khi sửa đổi.
+    """
     return await DonHangService.admin_update_order(db, order_id, update_data)
 
 @router.get("/user/my-orders", response_model=List[DonHangSchema])
@@ -52,7 +94,16 @@ async def lay_don_hang_cua_toi(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Người dùng xem lịch sử đơn hàng của mình"""
+    """
+    Lấy danh sách lịch sử đơn hàng của người dùng hiện tại đang đăng nhập.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+
+    Returns:
+        List[DonHangSchema]: Danh sách đơn hàng thuộc sở hữu của người dùng hiện tại.
+    """
     return await DonHangService.get_user_orders(db, nguoi_dung.id)
 
 @router.delete("/xoa/{order_id}")
@@ -61,21 +112,63 @@ async def xoa_don_hang(
     db: Session = Depends(get_db),
     nguoi_dung: NguoiDung = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Ẩn đơn hàng (xóa mềm) từ phía người dùng"""
+    """
+    Ẩn đơn hàng (xóa mềm) từ phía giao diện của người dùng (vẫn được lưu trữ trong DB của admin).
+
+    Args:
+        order_id (int): ID của đơn hàng cần ẩn.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+        nguoi_dung (NguoiDung): Đối tượng người dùng đang đăng nhập.
+
+    Returns:
+        dict: Kết quả trạng thái ẩn đơn hàng thành công.
+    """
     return await DonHangService.delete_order(db, order_id, nguoi_dung)
 @router.delete("/admin/xoa/{order_id}")
 async def admin_xoa_don_hang(order_id: int, db: Session = Depends(get_db)):
-    """Admin xóa hẳn đơn hàng vĩnh viễn"""
+    """
+    Xóa vĩnh viễn một đơn hàng khỏi cơ sở dữ liệu hệ thống (Hành động từ Admin).
+
+    Args:
+        order_id (int): ID của đơn hàng cần xóa bỏ hoàn toàn.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Kết quả xác nhận xóa thành công.
+    """
     return await DonHangService.admin_delete_order(db, order_id)
 
 @router.post("/admin/xoa-nhieu")
 async def admin_xoa_nhieu_don_hang(request: XoaNhieuOrderRequest, db: Session = Depends(get_db)):
-    """Admin xóa nhiều đơn hàng vĩnh viễn"""
+    """
+    Xóa vĩnh viễn nhiều đơn hàng cùng một lúc khỏi cơ sở dữ liệu dựa trên danh sách IDs.
+
+    Args:
+        request (XoaNhieuOrderRequest): Chứa danh sách IDs của các đơn hàng cần xóa hàng loạt.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Kết quả xác nhận xóa hàng loạt thành công.
+    """
     return await DonHangService.admin_bulk_delete_orders(db, request.ids)
 
 @router.get("/tra-cuu-bao-hanh/{imei}")
 async def tra_cuu_bao_hanh(imei: str, db: Session = Depends(get_db)):
-    """Tra cứu bảo hành theo mã IMEI"""
+    """
+    Tra cứu thông tin và thời hạn bảo hành của thiết bị dựa trên mã IMEI.
+    Nếu đơn hàng chưa hoàn thành, bảo hành sẽ hiển thị trạng thái chưa kích hoạt.
+    Hạng thẻ thành viên của khách hàng tại thời điểm mua cũng được trích xuất.
+
+    Args:
+        imei (str): Mã IMEI của thiết bị cần kiểm tra bảo hành.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông tin bảo hành chi tiết (Khách hàng, sản phẩm, ngày mua, hạn bảo hành, số ngày còn lại, hạng thẻ).
+
+    Raises:
+        HTTPException: Lỗi 404 nếu không tìm thấy mã IMEI tương ứng trong hệ thống đơn hàng.
+    """
     from app.models.donhang import DonHang
     from datetime import datetime, timedelta
     from fastapi import HTTPException

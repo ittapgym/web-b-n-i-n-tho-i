@@ -12,8 +12,22 @@ from fastapi import HTTPException
 class DonHangService:
     @staticmethod
     async def create_order(db: Session, order_data: DonHangCreate, user_id: int = None):
-        """Tạo đơn hàng mới và chi tiết đơn hàng, sau đó xóa giỏ hàng tương ứng.
-        Server-side calculation: tong_tien, giam_gia_voucher, phi_ship được tính ở server."""
+        """
+        Tạo đơn hàng mới cùng chi tiết sản phẩm đơn hàng, tính toán chiết khấu voucher & phí giao hàng.
+        Kiểm tra giới hạn số lượng mua hàng tối đa (10 sản phẩm/ngày) đối với tài khoản cá nhân thông thường.
+        Kiểm tra và trừ tồn kho, cập nhật số lượt sử dụng voucher, và xóa giỏ hàng của user sau khi đặt hàng thành công.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_data (DonHangCreate): Dữ liệu khởi tạo đơn hàng từ Client.
+            user_id (int, optional): ID người dùng thực hiện đặt hàng. Mặc định là None.
+
+        Returns:
+            DonHang: Bản ghi đơn hàng vừa tạo hoàn tất.
+
+        Raises:
+            HTTPException: Các lỗi vi phạm giới hạn mua, hết hàng tồn kho, voucher không hợp lệ hoặc lỗi DB.
+        """
         try:
             # Check daily purchase limit of 10 items for Personal accounts (i.e. not doanh_nghiep and not admin)
             if user_id:
@@ -181,7 +195,16 @@ class DonHangService:
 
     @staticmethod
     async def get_all_orders(db: Session):
-        """Lấy toàn bộ danh sách đơn hàng (Dành cho Admin)."""
+        """
+        Lấy toàn bộ danh sách đơn hàng đã đặt trong hệ thống phục vụ giao diện Admin.
+        Eager load chi tiết đơn hàng và thông tin sản phẩm liên quan.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            List[DonHang]: Danh sách toàn bộ đơn hàng, sắp xếp mới nhất lên đầu.
+        """
         return (
             db.query(DonHang)
             .options(joinedload(DonHang.items).joinedload(ChiTietDonHang.san_pham))
@@ -191,7 +214,20 @@ class DonHangService:
 
     @staticmethod
     async def update_status(db: Session, order_id: int, status: str):
-        """Cập nhật trạng thái đơn hàng (Dành cho Admin)."""
+        """
+        Cập nhật nhanh trạng thái của đơn hàng chỉ định theo ID.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_id (int): ID của đơn hàng cần sửa.
+            status (str): Trạng thái mới cần thiết lập.
+
+        Returns:
+            DonHang: Đối tượng đơn hàng sau khi cập nhật.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy đơn hàng.
+        """
         order = db.query(DonHang).filter(DonHang.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
@@ -203,7 +239,16 @@ class DonHangService:
 
     @staticmethod
     async def get_user_orders(db: Session, user_id: int):
-        """Lấy danh sách đơn hàng của một người dùng cụ thể."""
+        """
+        Lấy danh sách các đơn vị đơn hàng thuộc về một người dùng cụ thể đang ở trạng thái hiển thị (không bị ẩn).
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            user_id (int): ID của người dùng cần lọc đơn hàng.
+
+        Returns:
+            List[DonHang]: Danh sách đơn hàng của khách hàng đó.
+        """
         return (
             db.query(DonHang)
             .options(joinedload(DonHang.items).joinedload(ChiTietDonHang.san_pham))
@@ -214,7 +259,21 @@ class DonHangService:
 
     @staticmethod
     async def update_order_status(db: Session, order_id: int, trang_thai: str):
-        """Cập nhật trạng thái của một đơn hàng cụ thể."""
+        """
+        Cập nhật trạng thái đơn hàng và ghi nhận thời gian hoàn thành nếu trạng thái chuyển sang 'hoan_thanh'.
+        Đồng thời lưu vết hành động này vào nhật ký hệ thống.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_id (int): ID của đơn hàng.
+            trang_thai (str): Tên trạng thái mới.
+
+        Returns:
+            DonHang: Đối tượng đơn hàng sau khi lưu.
+
+        Raises:
+            HTTPException: Lỗi 404 không tìm thấy đơn hàng hoặc lỗi 500 khi lưu DB.
+        """
         order = db.query(DonHang).filter(DonHang.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
@@ -250,7 +309,21 @@ class DonHangService:
 
     @staticmethod
     async def admin_update_order(db: Session, order_id: int, update_data: dict):
-        """Admin cập nhật thông tin đơn hàng (Tên, SĐT, Địa chỉ, Ghi chú, Trạng thái)."""
+        """
+        Cho phép Admin chỉnh sửa thông tin chi tiết chung của đơn hàng (Tên, SĐT, Địa chỉ, Ghi chú, Trạng thái).
+        Tự động ghi nhận thời gian hoàn thành nếu trạng thái là 'hoan_thanh'.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_id (int): ID đơn hàng cần cập nhật.
+            update_data (dict): Bộ dữ liệu cập nhật mới.
+
+        Returns:
+            DonHang: Bản ghi sau khi cập nhật thành công.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không thấy đơn hàng hoặc lỗi 500 khi lưu DB.
+        """
         order = db.query(DonHang).filter(DonHang.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
@@ -281,7 +354,20 @@ class DonHangService:
 
     @staticmethod
     async def delete_order(db: Session, order_id: int, user: any):
-        """Người dùng ẩn đơn hàng khỏi lịch sử của họ (Không xóa thật trong DB)."""
+        """
+        Ẩn đơn hàng khỏi màn hình lịch sử giao dịch phía người dùng (không xóa khỏi DB thực tế).
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_id (int): ID đơn hàng.
+            user (any): Người dùng hiện tại yêu cầu ẩn đơn hàng.
+
+        Returns:
+            dict: Thông báo ẩn đơn hàng thành công.
+
+        Raises:
+            HTTPException: Lỗi 404 không thấy đơn hàng hoặc 403 nếu không phải là chủ sở hữu đơn hàng.
+        """
         order = db.query(DonHang).filter(DonHang.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
@@ -304,7 +390,20 @@ class DonHangService:
 
     @staticmethod
     async def admin_delete_order(db: Session, order_id: int):
-        """Admin xóa vĩnh viễn một đơn hàng và các chi tiết liên quan."""
+        """
+        Admin xóa vĩnh viễn một đơn hàng cùng các chi tiết đơn hàng (ChiTietDonHang) khỏi cơ sở dữ liệu.
+        Đồng thời lưu vết hoạt động vào nhật ký hệ thống.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_id (int): ID đơn hàng cần xóa vĩnh viễn.
+
+        Returns:
+            dict: Thông báo xác nhận xóa thành công.
+
+        Raises:
+            HTTPException: Lỗi 404 không tìm thấy đơn hàng hoặc lỗi 500 khi xóa.
+        """
         order = db.query(DonHang).filter(DonHang.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Không tìm thấy đơn hàng")
@@ -331,7 +430,19 @@ class DonHangService:
 
     @staticmethod
     async def admin_bulk_delete_orders(db: Session, order_ids: List[int]):
-        """Admin xóa hàng loạt các đơn hàng vĩnh viễn."""
+        """
+        Admin thực hiện xóa vĩnh viễn hàng loạt đơn hàng được chỉ định trong danh sách ID.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            order_ids (List[int]): Danh sách ID các đơn hàng cần xóa.
+
+        Returns:
+            dict: Thông báo số lượng đơn hàng đã xóa thành công.
+
+        Raises:
+            HTTPException: Lỗi hệ thống 500 nếu gặp trục trặc khi xóa hàng loạt.
+        """
         try:
             # Xóa chi tiết của tất cả đơn hàng trong danh sách để tránh lỗi khóa ngoại
             db.query(ChiTietDonHang).filter(

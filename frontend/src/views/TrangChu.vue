@@ -110,7 +110,7 @@
               <span class="label">Apple Trade In</span>
               <h2 class="title">Thu cũ đổi mới.<br/>Lên đời dễ dàng.</h2>
               <p class="desc">Nhận ưu đãi lên đến 15.000.000đ khi mang thiết bị cũ của bạn đến Peach Store.</p>
-              <a href="#" class="apple-link text-lg">Xem giá thu cũ ></a>
+              <a href="#" class="apple-link text-lg" @click.prevent="openTradeIn">Xem giá thu cũ ></a>
             </div>
             <div class="banner-visual">
               <img src="../assets/images/banners/mac_and_iphone.svg" alt="Trade In" />
@@ -190,6 +190,172 @@
             </div>
           </div>
         </section>
+        <!-- TRADE IN MODAL -->
+        <Transition name="fade">
+          <div v-if="showTradeInModal" class="tradein-modal-overlay" @click.self="closeAndReset">
+            <div class="tradein-modal">
+              <button class="close-btn" @click="closeAndReset" aria-label="Close">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+              
+              <!-- Content Screen -->
+              <div v-if="!isSubmitted" class="modal-content-grid-wrap animate-fade-in">
+                <div class="modal-header">
+                  <span class="label">Peach Trade In</span>
+                  <h2>Tính Giá Thu Cũ Đổi Mới</h2>
+                  <p class="subtitle">Định giá thiết bị cũ và nhận trợ giá lên đến 2.000.000đ khi nâng cấp sản phẩm mới tại Peach Store.</p>
+                </div>
+                
+                <div class="modal-body-grid">
+                  <!-- Left Column: Inputs -->
+                  <div class="calculator-inputs">
+                    <!-- Step 1: Device Category -->
+                    <div class="calc-section">
+                      <span class="step-num">01</span>
+                      <label>Loại thiết bị cũ của bạn</label>
+                      <div class="category-tabs">
+                        <button 
+                          class="tab-btn" 
+                          :class="{ active: selectedTradeCategory === 'iphone' }" 
+                          @click="selectCategory('iphone')"
+                        >
+                          iPhone
+                        </button>
+                        <button 
+                          class="tab-btn" 
+                          :class="{ active: selectedTradeCategory === 'ipad' }" 
+                          @click="selectCategory('ipad')"
+                        >
+                          iPad
+                        </button>
+                        <button 
+                          class="tab-btn" 
+                          :class="{ active: selectedTradeCategory === 'macbook' }" 
+                          @click="selectCategory('macbook')"
+                        >
+                          MacBook
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- Step 2: Select Model -->
+                    <div class="calc-section" v-if="selectedTradeDevice">
+                      <span class="step-num">02</span>
+                      <label>Chọn Model cụ thể</label>
+                      <select v-model="selectedTradeDevice" class="device-select">
+                        <option v-for="dev in tradeInDevices[selectedTradeCategory]" :key="dev.name" :value="dev">
+                          {{ dev.name }}
+                        </option>
+                      </select>
+                    </div>
+                    
+                    <!-- Step 3: Assess Condition -->
+                    <div class="calc-section">
+                      <span class="step-num">03</span>
+                      <label>Tình trạng thiết bị hiện tại</label>
+                      <div class="condition-list">
+                        <div 
+                          v-for="cond in conditions" 
+                          :key="cond.id" 
+                          class="condition-card"
+                          :class="{ active: selectedCondition === cond.id }"
+                          @click="selectedCondition = cond.id"
+                        >
+                          <div class="cond-header">
+                            <span class="cond-badge">{{ cond.id }}</span>
+                            <span class="cond-name">{{ cond.name }}</span>
+                          </div>
+                          <p class="cond-desc">{{ cond.desc }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Step 4: Select Target Device -->
+                    <div class="calc-section" v-if="selectedTargetDevice">
+                      <span class="step-num">04</span>
+                      <label>Chọn sản phẩm bạn muốn lên đời</label>
+                      <select v-model="selectedTargetDevice" class="device-select">
+                        <option v-for="target in targetDevices" :key="target.name" :value="target">
+                          {{ target.name }} ({{ formatPrice(target.price) }})
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <!-- Right Column: Results & Summary -->
+                  <div class="calculator-results">
+                    <div class="summary-card">
+                      <h3>Tóm Tắt Chương Trình</h3>
+                      
+                      <div class="result-row">
+                        <span class="res-label">Thiết bị cũ của bạn:</span>
+                        <span class="res-val bold">{{ selectedTradeDevice?.name || 'Chưa chọn' }}</span>
+                      </div>
+                      <div class="result-row">
+                        <span class="res-label">Tình trạng:</span>
+                        <span class="res-val">Loại {{ selectedCondition }}</span>
+                      </div>
+                      
+                      <hr class="divider" />
+                      
+                      <div class="result-row highlight">
+                        <span class="res-label">Giá thu mua thiết bị cũ:</span>
+                        <span class="res-val text-success">{{ formatPrice(getEstimatedOldValue()) }}</span>
+                      </div>
+                      <div class="result-row highlight">
+                        <span class="res-label">Trợ giá thêm từ Peach Store:</span>
+                        <span class="res-val text-success">+{{ formatPrice(selectedTargetDevice?.subsidy || 0) }}</span>
+                      </div>
+                      
+                      <div class="total-valuation">
+                        <span class="label">Tổng giá trị thu hồi (A + B):</span>
+                        <span class="value">{{ formatPrice(getTotalTradeInCredit()) }}</span>
+                      </div>
+                      
+                      <hr class="divider" />
+                      
+                      <div class="result-row">
+                        <span class="res-label">Sản phẩm lên đời:</span>
+                        <span class="res-val bold">{{ selectedTargetDevice?.name }}</span>
+                      </div>
+                      <div class="result-row">
+                        <span class="res-label">Giá bán niêm yết:</span>
+                        <span class="res-val">{{ formatPrice(selectedTargetDevice?.price || 0) }}</span>
+                      </div>
+                      
+                      <div class="final-payment">
+                        <span class="label">Số tiền bạn cần bù chênh lệch:</span>
+                        <span class="value">{{ formatPrice(getRemainingPayment()) }}</span>
+                        <span class="sub" v-if="getRemainingPayment() > 0">Hoặc trả góp chỉ từ <strong>{{ formatPrice(Math.round(getRemainingPayment() / 12)) }}</strong>/tháng x 12 tháng</span>
+                      </div>
+                      
+                      <button class="submit-trade-btn" @click="submitTradeInRequest">
+                        Đăng Ký Thu Cũ Lên Đời Ngay
+                      </button>
+                      <p class="terms">Peach Store hỗ trợ trả góp 0% qua thẻ tín dụng và hồ sơ duyệt 15 phút. Định giá chính xác sau khi thẩm định trực tiếp tại cửa hàng.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Success Screen -->
+              <div v-else class="success-screen animate-fade-in">
+                <div class="success-icon">
+                  <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#34C759" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <h2>Đăng Ký Thành Công!</h2>
+                <p>Peach Store đã ghi nhận yêu cầu thu cũ đổi mới của bạn cho sản phẩm <strong>{{ selectedTargetDevice?.name }}</strong>.</p>
+                <p class="desc-detail">Đội ngũ kỹ thuật viên của chúng tôi sẽ gọi điện tư vấn và thẩm định chi tiết trong vòng 15 phút.</p>
+                <button class="done-btn" @click="closeAndReset">Hoàn Tất</button>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </main>
     </div>
   </template>
@@ -205,10 +371,171 @@
   const hasError = ref(false);
   const errorMessage = ref('');
 
+  // Trade In Reactivity Setup
+  const showTradeInModal = ref(false);
+  const isSubmitted = ref(false);
+  const selectedTradeCategory = ref('iphone');
+  const selectedTradeDevice = ref(null);
+  const selectedCondition = ref('A');
+  const selectedTargetDevice = ref(null);
+
+  const tradeInDevices = {
+    iphone: [
+      { name: 'iPhone 15 Pro Max', basePrice: 20000000 },
+      { name: 'iPhone 15 Pro', basePrice: 17000000 },
+      { name: 'iPhone 15', basePrice: 13000000 },
+      { name: 'iPhone 14 Pro Max', basePrice: 15500000 },
+      { name: 'iPhone 14 Pro', basePrice: 13500000 },
+      { name: 'iPhone 14', basePrice: 11000000 },
+      { name: 'iPhone 13 Pro Max', basePrice: 12000000 },
+      { name: 'iPhone 13 Pro', basePrice: 10500000 },
+      { name: 'iPhone 13', basePrice: 8500000 }
+    ],
+    ipad: [
+      { name: 'iPad Pro M2 12.9" (2022)', basePrice: 16000000 },
+      { name: 'iPad Pro M1 11" (2021)', basePrice: 11500000 },
+      { name: 'iPad Air 5 (M1)', basePrice: 9500000 },
+      { name: 'iPad Air 4', basePrice: 7000000 },
+      { name: 'iPad Gen 10', basePrice: 6500000 },
+      { name: 'iPad Gen 9', basePrice: 4800000 }
+    ],
+    macbook: [
+      { name: 'MacBook Pro M3 Max 16" (2023)', basePrice: 45000000 },
+      { name: 'MacBook Pro M3 Pro 14" (2023)', basePrice: 28000000 },
+      { name: 'MacBook Pro M2 Pro 14" (2023)', basePrice: 23000000 },
+      { name: 'MacBook Pro M1 Pro 14" (2021)', basePrice: 18000000 },
+      { name: 'MacBook Air M2 13" (2022)', basePrice: 14500000 },
+      { name: 'MacBook Air M1 13" (2020)', basePrice: 11000000 }
+    ]
+  };
+
+  const conditions = [
+    { 
+      id: 'A', 
+      name: 'Loại A (Đẹp 99%)', 
+      desc: 'Máy hoạt động bình thường, không trầy xước, pin > 85%, mọi tính năng hoàn hảo.', 
+      multiplier: 1.0 
+    },
+    { 
+      id: 'B', 
+      name: 'Loại B (Trầy nhẹ)', 
+      desc: 'Máy hoạt động tốt, xước nhẹ màn hình hoặc vỏ, không cấn móp méo.', 
+      multiplier: 0.85 
+    },
+    { 
+      id: 'C', 
+      name: 'Loại C (Cấn trầy)', 
+      desc: 'Máy xước xát tương đối, cấn nhẹ cạnh viền, hoạt động tốt các chức năng chính.', 
+      multiplier: 0.65 
+    },
+    { 
+      id: 'D', 
+      name: 'Loại D (Hao mòn)', 
+      desc: 'Máy trầy xước nhiều, cấn móp sâu hoặc có lỗi chức năng phụ (FaceID, pin yếu, màn ám nhẹ).', 
+      multiplier: 0.45 
+    }
+  ];
+
+  const targetDevices = [
+    { name: 'iPhone 16 Pro Max 256GB', price: 34990000, subsidy: 2000000 },
+    { name: 'iPhone 16 Pro 128GB', price: 28990000, subsidy: 1500000 },
+    { name: 'iPhone 16 128GB', price: 22990000, subsidy: 1000000 },
+    { name: 'MacBook Air M3 13" 256GB', price: 27990000, subsidy: 1500000 },
+    { name: 'iPad Pro M4 11" 256GB', price: 28990000, subsidy: 1500000 }
+  ];
+
+  /**
+   * Chọn danh mục thiết bị thu cũ (iPhone, iPad, MacBook) và đặt thiết bị mặc định tương ứng.
+   * 
+   * @param {string} cat - Tên danh mục thiết bị ('iphone', 'ipad', 'macbook').
+   */
+  const selectCategory = (cat) => {
+    selectedTradeCategory.value = cat;
+    selectedTradeDevice.value = tradeInDevices[cat][0];
+  };
+
+  /**
+   * Mở hộp thoại modal chương trình Thu cũ Đổi mới (Trade-in) và thiết lập các thông số mặc định ban đầu.
+   */
+  const openTradeIn = () => {
+    showTradeInModal.value = true;
+    isSubmitted.value = false;
+    selectedTradeCategory.value = 'iphone';
+    selectedTradeDevice.value = tradeInDevices.iphone[0];
+    selectedCondition.value = 'A';
+    selectedTargetDevice.value = targetDevices[0];
+  };
+
+  /**
+   * Đóng hộp thoại Trade-in và đặt lại trạng thái nộp biểu mẫu về mặc định.
+   */
+  const closeAndReset = () => {
+    showTradeInModal.value = false;
+    isSubmitted.value = false;
+  };
+
+  /**
+   * Tính toán giá trị định giá của thiết bị cũ dựa trên giá cơ bản và hệ số tình trạng máy.
+   * 
+   * @returns {number} Giá trị ước tính của máy cũ.
+   */
+  const getEstimatedOldValue = () => {
+    if (!selectedTradeDevice.value) return 0;
+    const multiplier = conditions.find(c => c.id === selectedCondition.value)?.multiplier || 1.0;
+    return Math.round(selectedTradeDevice.value.basePrice * multiplier);
+  };
+
+  /**
+   * Tính tổng số tiền được khấu trừ bao gồm giá trị định giá máy cũ và số tiền trợ giá từ cửa hàng.
+   * 
+   * @returns {number} Tổng số tiền được khấu trừ.
+   */
+  const getTotalTradeInCredit = () => {
+    return getEstimatedOldValue() + (selectedTargetDevice.value?.subsidy || 0);
+  };
+
+  /**
+   * Tính số tiền chênh lệch còn lại mà khách hàng cần thanh toán sau khi trừ đi khoản thu cũ đổi mới.
+   * 
+   * @returns {number} Số tiền còn lại cần thanh toán.
+   */
+  const getRemainingPayment = () => {
+    if (!selectedTargetDevice.value) return 0;
+    const diff = selectedTargetDevice.value.price - getTotalTradeInCredit();
+    return diff > 0 ? diff : 0;
+  };
+
+  /**
+   * Gửi yêu cầu đăng ký tham gia chương trình Thu cũ Đổi mới và chuyển sang giao diện thành công.
+   */
+  const submitTradeInRequest = () => {
+    isSubmitted.value = true;
+  };
+
+  /**
+   * Định dạng giá tiền số thành chuỗi tiền tệ VNĐ hiển thị trực quan (ví dụ: "10.000.000đ").
+   * 
+   * @param {number} value - Giá trị số tiền cần định dạng.
+   * @returns {string} Chuỗi tiền tệ định dạng VNĐ.
+   */
+  const formatPrice = (value) => {
+    if (value === undefined || value === null) return '0đ';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value).replace(/₫/g, 'đ');
+  };
+
+  /**
+   * Kiểm tra định dạng của địa chỉ email nhập vào bằng biểu thức chính quy (Regex).
+   * 
+   * @param {string} email - Chuỗi email cần kiểm tra.
+   * @returns {boolean} Kết quả định dạng email hợp lệ hay không.
+   */
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  /**
+   * Xử lý đăng ký nhận bản tin khuyến mãi từ Peach Store qua email khách hàng nhập vào.
+   */
   const handleSubscribe = () => {
     hasError.value = false;
     const trimmedEmail = emailInput.value.trim();
@@ -230,6 +557,9 @@
     subscribed.value = true;
   };
 
+  /**
+   * Đặt lại trạng thái đăng ký bản tin để người dùng có thể thực hiện đăng ký mới.
+   */
   const resetSubscription = () => {
     subscribed.value = false;
     emailInput.value = '';
@@ -237,7 +567,8 @@
   };
 
   onMounted(() => {
-    // Other initialization if needed
+    selectedTradeDevice.value = tradeInDevices.iphone[0];
+    selectedTargetDevice.value = targetDevices[0];
   });
   </script>
 
@@ -1123,5 +1454,453 @@
 
   .reset-sub-btn:hover {
     opacity: 0.8;
+  }
+
+  /* --- TRADE IN MODAL STYLES --- */
+  .tradein-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .tradein-modal {
+    background: #ffffff;
+    width: 100%;
+    max-width: 960px;
+    max-height: 90vh;
+    border-radius: 24px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    position: relative;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes modalSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: #f5f5f7;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #86868b;
+    transition: all 0.2s;
+  }
+
+  .close-btn:hover {
+    background: #e8e8ed;
+    color: #1d1d1f;
+  }
+
+  .modal-header {
+    margin-bottom: 30px;
+    text-align: left;
+  }
+
+  .modal-header .label {
+    color: #bf4800;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .modal-header h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0 0 8px 0;
+  }
+
+  .modal-header .subtitle {
+    font-size: 15px;
+    color: #86868b;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .modal-body-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+  }
+
+  .calculator-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    text-align: left;
+  }
+
+  .calc-section {
+    position: relative;
+    padding-left: 36px;
+  }
+
+  .calc-section .step-num {
+    position: absolute;
+    left: 0;
+    top: -2px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #e8e8ed;
+  }
+
+  .calc-section label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .category-tabs {
+    display: flex;
+    gap: 8px;
+    background: #f5f5f7;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #86868b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: #ffffff;
+    color: #1d1d1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+  }
+
+  .device-select {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #d2d2d7;
+    font-size: 15px;
+    color: #1d1d1f;
+    outline: none;
+    background: #ffffff;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .device-select:focus {
+    border-color: #0071e3;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+  }
+
+  .condition-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .condition-card {
+    border: 1px solid #d2d2d7;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .condition-card:hover {
+    border-color: #86868b;
+    background: #fafafa;
+  }
+
+  .condition-card.active {
+    border-color: #0071e3;
+    background: rgba(0, 113, 227, 0.02);
+    box-shadow: 0 0 0 1px #0071e3;
+  }
+
+  .cond-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .cond-badge {
+    background: #f5f5f7;
+    color: #1d1d1f;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .condition-card.active .cond-badge {
+    background: #0071e3;
+    color: #ffffff;
+  }
+
+  .cond-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1d1d1f;
+  }
+
+  .cond-desc {
+    font-size: 12px;
+    color: #86868b;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .calculator-results {
+    position: sticky;
+    top: 0;
+  }
+
+  .summary-card {
+    background: #f5f5f7;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: left;
+  }
+
+  .summary-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0 0 20px 0;
+  }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: #515154;
+  }
+
+  .result-row.highlight {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .result-row .res-val.bold {
+    font-weight: 600;
+    color: #1d1d1f;
+  }
+
+  .text-success {
+    color: #34c759;
+    font-weight: 600;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #d2d2d7;
+    margin: 16px 0;
+  }
+
+  .total-valuation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    margin-top: 16px;
+  }
+
+  .total-valuation .label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #86868b;
+  }
+
+  .total-valuation .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #34c759;
+  }
+
+  .final-payment {
+    text-align: center;
+    background: rgba(0, 113, 227, 0.05);
+    border: 1px dashed rgba(0, 113, 227, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .final-payment .label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #86868b;
+  }
+
+  .final-payment .value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0071e3;
+  }
+
+  .final-payment .sub {
+    font-size: 12px;
+    color: #515154;
+  }
+
+  .submit-trade-btn {
+    width: 100%;
+    background: #0071e3;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.2);
+  }
+
+  .submit-trade-btn:hover {
+    background: #0077ed;
+    transform: translateY(-1px);
+  }
+
+  .summary-card .terms {
+    font-size: 11px;
+    color: #86868b;
+    line-height: 1.4;
+    margin: 12px 0 0 0;
+    text-align: center;
+  }
+
+  /* Success Screen */
+  .success-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+  }
+
+  .success-icon {
+    width: 96px;
+    height: 96px;
+    background: rgba(52, 199, 89, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .success-screen h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0 0 12px 0;
+  }
+
+  .success-screen p {
+    font-size: 15px;
+    color: #515154;
+    line-height: 1.5;
+    margin: 0 0 6px 0;
+  }
+
+  .success-screen p.desc-detail {
+    font-size: 13px;
+    color: #86868b;
+    margin-bottom: 30px;
+  }
+
+  .done-btn {
+    background: #34c759;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 30px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .done-btn:hover {
+    background: #30b852;
+    transform: translateY(-1px);
+  }
+
+  /* Responsive for Modal */
+  @media (max-width: 900px) {
+    .tradein-modal {
+      padding: 24px;
+    }
+    .modal-body-grid {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+  }
+
+  /* Transition Animations */
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
   }
   </style>

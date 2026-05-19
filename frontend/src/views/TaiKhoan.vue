@@ -1882,9 +1882,7 @@ let chatIntervalId = null
 const startChatPolling = () => {
   stopChatPolling()
   chatIntervalId = setInterval(() => {
-    if (activeTab.value === 'chat') {
-      fetchChatMessagesBackground()
-    }
+    fetchChatMessagesBackground()
   }, 10000)
 }
 

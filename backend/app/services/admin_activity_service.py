@@ -5,7 +5,18 @@ from datetime import datetime
 class AdminActivityService:
     @staticmethod
     def ghi_log(db: Session, thao_tac: str, nhan_vien: str = "Admin"):
-        """Ghi nhật ký hoạt động của Admin. Tự động bỏ qua các thao tác làm mới, load lại, xem danh sách."""
+        """
+        Ghi nhật ký hoạt động của Admin vào cơ sở dữ liệu.
+        Tự động lọc bỏ các hành động xem, tải lại hoặc truy vấn dữ liệu thông thường để tránh làm nhiễu log.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            thao_tac (str): Chi tiết nội dung hành động thực hiện.
+            nhan_vien (str, optional): Tên nhân viên/quản trị viên thực hiện. Mặc định là "Admin".
+
+        Returns:
+            HoatDongAdmin: Bản ghi nhật ký vừa tạo hoặc None nếu thao tác bị bỏ qua/lỗi.
+        """
         thao_tac_lower = thao_tac.lower()
         ignore_keywords = [
             "xem danh sách", "load", "tải lại", "làm mới", 

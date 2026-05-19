@@ -52,6 +52,10 @@ createApp({
       edit: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`
     };
 
+    /**
+     * Gửi thông báo đẩy đến nhóm khách hàng đã chọn.
+     * Kiểm tra tính hợp lệ của tiêu đề và nội dung trước khi yêu cầu xác nhận.
+     */
     const sendPush = () => {
       if (!pushTitle.value || !pushBody.value) {
         showToast('Cảnh báo', 'Vui lòng nhập đầy đủ tiêu đề và nội dung.', 'warning');
@@ -98,6 +102,13 @@ createApp({
       );
     };
 
+    /**
+     * Hiển thị thông báo nhỏ (Toast) ở góc màn hình.
+     * 
+     * @param {string} title - Tiêu đề của thông báo.
+     * @param {string} message - Nội dung chi tiết của thông báo.
+     * @param {string} [iconName='info'] - Tên biểu tượng hiển thị ('info', 'success', 'warning', 'refresh', 'edit').
+     */
     const showToast = (title, message, iconName = 'info') => {
       if (notifications.value.some(n => n.message === message)) return;
       if (notifications.value.length >= 3) notifications.value.shift();
@@ -112,21 +123,41 @@ createApp({
     window.showToast = showToast;
 
 
+    /**
+     * Hiển thị hộp thoại xác nhận (Confirm Modal) yêu cầu người dùng xác thực hành động.
+     * 
+     * @param {string} title - Tiêu đề hộp thoại.
+     * @param {string} message - Nội dung câu hỏi xác nhận.
+     * @param {string} icon - Đoạn mã SVG biểu tượng hiển thị.
+     * @param {Function} onConfirm - Hàm callback được thực thi khi người dùng bấm xác nhận.
+     */
     const showConfirm = (title, message, icon, onConfirm) => {
       modal.value = { show: true, title, message, icon, onConfirm };
     };
     window.showConfirm = showConfirm;
 
+    /**
+     * Thực thi hàm callback xác nhận của hộp thoại và ẩn hộp thoại đi.
+     */
     const confirmModal = () => {
       if (modal.value.onConfirm) modal.value.onConfirm();
       modal.value.show = false;
     };
 
+    /**
+     * Định dạng số tiền thành chuỗi tiền tệ Việt Nam Đồng (VND).
+     * 
+     * @param {number} p - Số tiền cần định dạng.
+     * @returns {string} Chuỗi tiền tệ đã định dạng (ví dụ: "15.000.000 ₫").
+     */
     const formatPrice = (p) => {
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p);
     };
 
     // Window Controls
+    /**
+     * Yêu cầu xác nhận đóng ứng dụng Electron.
+     */
     const closeWindow = () => {
       showConfirm(
         'Xác nhận thoát',
@@ -138,10 +169,16 @@ createApp({
       );
     };
 
+    /**
+     * Thu nhỏ cửa sổ ứng dụng xuống thanh tác vụ (Taskbar).
+     */
     const minimizeWindow = () => {
       if (ipcRenderer) ipcRenderer.send('window-minimize');
     };
 
+    /**
+     * Phóng to hoặc thu nhỏ cửa sổ ứng dụng về kích thước mặc định.
+     */
     const maximizeWindow = () => {
       if (ipcRenderer) ipcRenderer.send('window-maximize');
     };
@@ -151,6 +188,11 @@ createApp({
     };
 
     const selectedOrder = ref(null);
+    /**
+     * Mở hộp thoại hiển thị chi tiết hóa đơn đặt hàng của khách hàng.
+     * 
+     * @param {Object} order - Đối tượng hóa đơn chứa thông tin sản phẩm, địa chỉ, thanh toán.
+     */
     const openOrderDetail = (order) => {
       // Map pre-mapped items from view model, preserving all custom specifications
       const realItems = (order.items || []).map(item => ({
@@ -171,6 +213,9 @@ createApp({
       };
     };
 
+    /**
+     * Làm mới toàn bộ dữ liệu hệ thống (sản phẩm, đơn hàng, khách hàng, voucher...) từ máy chủ.
+     */
     const reloadApp = async () => {
       showToast('Thông báo', 'Đang làm mới dữ liệu hệ thống...', 'refresh');
       await adminData.refreshData();
@@ -185,6 +230,9 @@ createApp({
     const currentSessionId = ref(localStorage.getItem('peach_current_session_id') || ('session_' + Date.now()));
     localStorage.setItem('peach_current_session_id', currentSessionId.value);
 
+    /**
+     * Khởi tạo một phiên chat mới với trợ lý AI Peach Assistant, xóa lịch sử hiển thị cũ.
+     */
     const startNewChat = () => {
       currentSessionId.value = 'session_' + Date.now();
       localStorage.setItem('peach_current_session_id', currentSessionId.value);
@@ -195,6 +243,9 @@ createApp({
       scrollToBottom();
     };
 
+    /**
+     * Tự động cuộn khung chat xuống dưới cùng khi có tin nhắn mới.
+     */
     const scrollToBottom = () => {
       Vue.nextTick(() => {
         const container = document.querySelector('.chat-messages');
@@ -204,6 +255,14 @@ createApp({
       });
     };
 
+    /**
+     * Trình phản hồi thông minh cục bộ (Local AI Engine) khi không cấu hình DeepSeek.
+     * Tự động phân tích từ khóa thô tiếng Việt (không dấu và có dấu) để truy vấn thông tin
+     * doanh thu, đơn hàng, sản phẩm, tồn kho và voucher từ bộ nhớ client.
+     * 
+     * @param {string} msg - Nội dung câu hỏi từ Admin.
+     * @returns {string} Nội dung trả lời markdown tương ứng.
+     */
     const localAiResponder = (msg) => {
       const q = msg.toLowerCase().trim();
       
@@ -297,6 +356,12 @@ createApp({
       return `Dạ, tôi ghi nhận câu hỏi của bạn: *"${msg}"*.\n\nHiện tôi đang hoạt động dưới dạng **Trợ lý dữ liệu cục bộ** của cửa hàng. Bạn có thể hỏi tôi các câu hỏi như:\n- 📊 *"Doanh thu hôm nay"* hoặc *"Thống kê đơn hàng"*.\n- 📦 *"Tồn kho iPhone"* hoặc danh sách *"sản phẩm"*.\n- 🎫 *"Kiểm tra mã giảm giá"* hiện có.\n\n*Nếu bạn muốn thảo luận chuyên sâu hơn về các vấn đề kinh doanh hoặc phân tích nâng cao, đừng quên cấu hình kết nối với **DeepSeek AI** trong phần "Cấu hình AI Model" nhé!* 🍑✨`;
     };
 
+    /**
+     * Tạo ngữ cảnh dữ liệu live của toàn bộ cửa hàng (System Context) dưới dạng chuỗi văn bản.
+     * Dữ liệu này được nén và gửi kèm trong prompt hệ thống của DeepSeek để AI trả lời chính xác.
+     * 
+     * @returns {string} Chuỗi văn bản chứa thông tin thống kê, sản phẩm, đơn hàng, khách hàng, support ticket, nhân sự.
+     */
     const generateLiveStoreContext = () => {
       const stats = adminData.stats?.value || {};
       const revenueStr = stats.revenue || '0 ₫';
@@ -308,50 +373,76 @@ createApp({
       const pendingCustomers = adminData.customersPendingCount?.value || 0;
       const pendingSupport = adminData.supportPendingCount?.value || 0;
 
-      let context = `=== DỮ LIỆU CỬA HÀNG PEACH STORE LÚC ${new Date().toLocaleString('vi-VN')} ===\n\n`;
+      let context = `=== PEACH STORE SYSTEM LIVE DATABASE STATE ===\n`;
+      context += `Time of generation: ${new Date().toLocaleString('vi-VN')}\n\n`;
       context += `📊 [TỔNG QUAN HỆ THỐNG]:\n`;
       context += `- Doanh thu tổng tích lũy: ${revenueStr} (${revenueInWords})\n`;
-      context += `- Tổng số đơn hàng: ${totalOrders} đơn\n`;
-      context += `- Số đơn hàng ĐANG CHỜ PHÊ DUYỆT (pending): ${pendingOrders} đơn\n`;
-      context += `- Tổng số khách hàng: ${totalCustomers} thành viên\n`;
-      context += `- Số yêu cầu đăng ký/khôi phục chờ duyệt: ${pendingCustomers} thành viên\n`;
+      context += `- Tổng số đơn hàng: ${totalOrders} đơn (${pendingOrders} đơn chờ duyệt)\n`;
+      context += `- Tổng số khách hàng: ${totalCustomers} thành viên (${pendingCustomers} chờ duyệt)\n`;
       context += `- Số ticket hỗ trợ chưa xử lý: ${pendingSupport} yêu cầu\n\n`;
 
       const products = adminData.products?.value || [];
-      context += `📦 [TỒN KHO & BẢNG GIÁ SẢN PHẨM] (${products.length} dòng sản phẩm):\n`;
+      context += `📦 [TẤT CẢ SẢN PHẨM TRONG KHO] (${products.length} sản phẩm):\n`;
       products.forEach(p => {
         const name = p.ten_san_pham || p.ten || 'Sản phẩm không tên';
         const price = p.gia_ban || p.gia || 0;
-        context += `- ${name} (ID: ${p.id}): Giá ${price.toLocaleString('vi-VN')} VNĐ - Kho: ${p.so_luong_kho} máy - Màu: ${p.mau_sac || 'N/A'} - Bộ nhớ: ${p.dung_luong || 'N/A'} - RAM: ${p.ram || 'N/A'} - Loại: ${p.danh_muc || 'N/A'}\n`;
+        context += `- [SP #${p.id}] ${name} | Giá: ${price.toLocaleString('vi-VN')} VNĐ | Kho: ${p.so_luong_kho} | Màu: ${p.mau_sac || 'N/A'} | Dung lượng: ${p.dung_luong || 'N/A'} | RAM: ${p.ram || 'N/A'} | Danh mục: ${p.danh_muc || 'N/A'}\n`;
       });
       context += `\n`;
 
       const vouchers = adminData.vouchers?.value || [];
-      context += `🎫 [MÃ GIẢM GIÁ ĐANG CHẠY] (${vouchers.length} mã):\n`;
+      context += `🎫 [MÃ GIẢM GIÁ / VOUCHERS] (${vouchers.length} mã):\n`;
       vouchers.forEach(v => {
         const val = v.loai_giam_gia === 'phan_tram' ? `${v.gia_tri_giam}%` : `${v.gia_tri_giam?.toLocaleString('vi-VN')} VNĐ`;
-        context += `- Mã \`${v.ma_voucher}\`: Giảm ${val} - Đơn tối thiểu từ ${v.don_hang_toi_thieu?.toLocaleString('vi-VN')} VNĐ - Còn lại: ${v.so_luong_con_lai} lượt dùng - Trạng thái: ${v.trang_thai}\n`;
+        const minOrder = v.don_hang_toi_thieu || 0;
+        context += `- [Mã: ${v.ma_voucher}] Giảm: ${val} | Đơn từ: ${minOrder.toLocaleString('vi-VN')} VNĐ | Còn lại: ${v.so_luong_con_lai} | Trạng thái: ${v.trang_thai}\n`;
       });
       context += `\n`;
 
       const orders = adminData.orders?.value || [];
-      context += `🚚 [5 ĐƠN HÀNG GẦN ĐÂY NHẤT]:\n`;
-      orders.slice(0, 5).forEach(o => {
+      context += `🚚 [DANH SÁCH ĐƠN HÀNG HỆ THỐNG] (${orders.length} đơn hàng):\n`;
+      orders.forEach(o => {
         const total = o.tong_tien || o.tong_cong || o.total || 0;
         const name = o.ten_khach_hang || o.email || 'Khách vãng lai';
-        context += `- Đơn #${o.id || o.ma_don_hang} - Khách: ${name} - Tổng: ${total.toLocaleString('vi-VN')} VNĐ - Trạng thái: ${o.trang_thai}\n`;
+        const phone = o.so_dien_thoai || o.phone || 'N/A';
+        const date = o.thoi_gian || o.date || 'N/A';
+        context += `- [Đơn #${o.id}] Khách: ${name} (${phone}) | Tổng: ${total.toLocaleString('vi-VN')} VNĐ | Trạng thái: ${o.trang_thai} | Ngày: ${date}\n`;
       });
       context += `\n`;
 
       const customers = adminData.customers?.value || [];
-      context += `👥 [5 KHÁCH HÀNG THÂN THIẾT]:\n`;
-      customers.slice(0, 5).forEach(c => {
-        context += `- ${c.ho_ten || c.email} - Tiêu dùng: ${c.tong_chi_tieu?.toLocaleString('vi-VN') || 0} VNĐ - Hạng: ${c.hang_thanh_vien || 'N/A'}\n`;
+      context += `👥 [DANH SÁCH KHÁCH HÀNG] (${customers.length} thành viên):\n`;
+      customers.forEach(c => {
+        const spend = c.tong_chi_tieu || 0;
+        const phone = c.so_dien_thoai || 'N/A';
+        const email = c.email || 'N/A';
+        context += `- [KH #${c.id}] ${c.ho_ten} | Email: ${email} | SĐT: ${phone} | Tiêu dùng: ${spend.toLocaleString('vi-VN')} VNĐ | Hạng: ${c.hang_thanh_vien || 'N/A'} | Kích hoạt: ${c.trang_thai}\n`;
       });
-      
+      context += `\n`;
+
+      const tickets = adminData.supportTickets?.value || [];
+      context += `🎫 [DANH SÁCH TICKET HỖ TRỢ] (${tickets.length} yêu cầu):\n`;
+      tickets.forEach(t => {
+        const userName = t.user?.ho_ten || t.nguoi_dung?.ho_ten || 'N/A';
+        const phone = t.user?.so_dien_thoai || t.nguoi_dung?.so_dien_thoai || 'N/A';
+        context += `- [Ticket #${t.id}] Chủ đề: "${t.chu_de}" | Khách: ${userName} (${phone}) | Trạng thái: ${t.trang_thai} | IMEI: ${t.imei_serial || 'N/A'}\n`;
+      });
+      context += `\n`;
+
+      const admins = adminData.admins?.value || [];
+      context += `👥 [DANH SÁCH NHÂN VIÊN & ADMIN] (${admins.length} nhân sự):\n`;
+      admins.forEach(a => {
+        context += `- [NV #${a.id}] ${a.ho_ten} | Email: ${a.email} | Vai trò: ${a.vai_ro} | Trạng thái: ${a.trang_thai}\n`;
+      });
+
       return context;
     };
 
+    /**
+     * Gửi truy vấn hội thoại AI của Admin.
+     * Nếu có cấu hình DeepSeek API Key, gửi request proxy tới DeepSeek kèm ngữ cảnh live-store.
+     * Nếu không có API Key, tự động hạ cấp xuống sử dụng Local Engine.
+     */
     const sendQuery = async () => {
       const msg = aiQuery.value.trim();
       if (!msg) return;

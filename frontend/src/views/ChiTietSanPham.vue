@@ -162,10 +162,20 @@ import { useRoute, useRouter } from 'vue-router'
 import { sanPhamApi, gioHangApi, yeuThichApi } from '../services/api'
 import { useCartStore } from '../stores/cart'
 
+/**
+ * Trình quản lý giỏ hàng Pinia Store.
+ */
 const cartStore = useCartStore()
 
+/**
+ * Các đối tượng quản lý router từ vue-router.
+ */
 const route = useRoute()
 const router = useRouter()
+
+/**
+ * Thông tin chi tiết sản phẩm và các trạng thái thuộc tính được lựa chọn.
+ */
 const product = ref(null)
 const selectedImage = ref('')
 const selectedRam = ref('')
@@ -173,17 +183,28 @@ const selectedDungLuong = ref('')
 const selectedMauSac = ref('')
 const submitting = ref(false)
 
+/**
+ * Trạng thái hiển thị và thông tin của Toast Notification.
+ */
 const notification = ref({
   show: false,
   message: '',
   type: 'success'
 })
 
+/**
+ * Hiển thị thông báo Toast ngắn trên giao diện.
+ * @param {string} msg - Nội dung thông điệp cần hiển thị.
+ * @param {string} [type='success'] - Phân loại thông báo ('success', 'error', 'info').
+ */
 const showToast = (msg, type = 'success') => {
   notification.value = { show: true, message: msg, type: type }
   setTimeout(() => { notification.value.show = false }, 3000)
 }
 
+/**
+ * Phân tích và lấy danh sách các cặp cấu hình RAM/Dung lượng khả dụng được nhúng trong phần mô tả sản phẩm.
+ */
 const activePairings = computed(() => {
   if (!product.value?.mo_ta) return []
   const match = product.value.mo_ta.match(/<!--SPECS_PAIRINGS:(.*?)-->/)
@@ -197,16 +218,29 @@ const activePairings = computed(() => {
   return []
 })
 
+/**
+ * Lọc bỏ mã nhúng cấu hình pairings trong mô tả sản phẩm để lấy văn bản mô tả hiển thị sạch.
+ */
 const cleanDescription = computed(() => {
   if (!product.value?.mo_ta) return ''
   return product.value.mo_ta.replace(/<!--SPECS_PAIRINGS:(.*?)-->/, '').trim()
 })
 
+/**
+ * Trạng thái mở rộng/thu gọn nội dung mô tả sản phẩm.
+ */
 const isExpanded = ref(false)
+
+/**
+ * Kiểm tra xem mô tả sản phẩm có đủ dài để hiển thị nút "Xem thêm / Thu gọn" hay không.
+ */
 const isLongDescription = computed(() => {
   return cleanDescription.value.length > 250
 })
 
+/**
+ * Danh sách tùy chọn dung lượng bộ nhớ trong khả dụng tương ứng với RAM đang chọn hoặc mặc định.
+ */
 const dungLuongList = computed(() => {
   if (activePairings.value.length > 0 && selectedRam.value) {
     const pair = activePairings.value.find(p => p.ram === selectedRam.value)
@@ -218,16 +252,23 @@ const dungLuongList = computed(() => {
   return product.value.dung_luong.split(',').map(s => s.trim()).filter(Boolean)
 })
 
+/**
+ * Danh sách tùy chọn bộ nhớ RAM khả dụng của sản phẩm.
+ */
 const ramList = computed(() => {
   if (!product.value?.ram) return []
   return product.value.ram.split(',').map(s => s.trim()).filter(Boolean)
 })
 
+/**
+ * Danh sách các tùy chọn màu sắc sản phẩm khả dụng.
+ */
 const mauSacList = computed(() => {
   if (!product.value?.mau_sac) return []
   return product.value.mau_sac.split(',').map(s => s.trim()).filter(Boolean)
 })
 
+// Theo dõi thay đổi của RAM để reset lựa chọn dung lượng bộ nhớ trong nếu không còn tương thích
 watch(selectedRam, (newRam) => {
   if (newRam && activePairings.value.length > 0) {
     const pair = activePairings.value.find(p => p.ram === newRam)
@@ -239,9 +280,14 @@ watch(selectedRam, (newRam) => {
   }
 })
 
+/**
+ * Thay đổi hình ảnh chính hiển thị khi người dùng click vào ảnh thu nhỏ (thumbnail).
+ * @param {string} img - URL của hình ảnh.
+ * @param {Event} event - Đối tượng sự kiện click.
+ */
 const selectImage = (img, event) => {
   selectedImage.value = img
-  // Tự động cuộn ảnh được chọn vào giữa
+  // Tự động cuộn ảnh được chọn vào giữa danh sách thumbnail
   if (event && event.currentTarget) {
     event.currentTarget.scrollIntoView({
       behavior: 'smooth',
@@ -251,6 +297,10 @@ const selectImage = (img, event) => {
   }
 }
 
+/**
+ * Xử lý sự kiện cuộn bánh xe chuột để di chuyển danh sách thumbnail theo chiều ngang trên PC.
+ * @param {WheelEvent} e - Sự kiện cuộn chuột.
+ */
 const handleWheel = (e) => {
   const container = document.querySelector('.thumbnail-list')
   if (container) {
@@ -259,8 +309,14 @@ const handleWheel = (e) => {
   }
 }
 
+/**
+ * Trạng thái yêu thích sản phẩm của tài khoản hiện tại.
+ */
 const isFavorite = ref(false)
 
+/**
+ * Kiểm tra xem sản phẩm hiện tại có nằm trong danh sách yêu thích của người dùng hay chưa.
+ */
 const checkFavoriteStatus = async () => {
   const token = localStorage.getItem('access_token') || localStorage.getItem('token')
   if (!token || token === 'null' || token === 'undefined') {
@@ -275,6 +331,9 @@ const checkFavoriteStatus = async () => {
   }
 }
 
+/**
+ * Bật/tắt trạng thái yêu thích sản phẩm của người dùng.
+ */
 const toggleFavorite = async () => {
   const token = localStorage.getItem('access_token') || localStorage.getItem('token')
   if (!token || token === 'null' || token === 'undefined') {
@@ -296,6 +355,9 @@ const toggleFavorite = async () => {
   }
 }
 
+/**
+ * Tải dữ liệu chi tiết sản phẩm dựa trên ID trên URL.
+ */
 const fetchProductDetail = async () => {
   try {
     const id = route.params.id
@@ -308,10 +370,20 @@ const fetchProductDetail = async () => {
   }
 }
 
+/**
+ * Định dạng giá trị số thành chuỗi hiển thị tiền tệ Việt Nam Đồng (VND).
+ * @param {number} p - Số tiền cần định dạng.
+ * @returns {string} Chuỗi tiền tệ định dạng.
+ */
 const formatPrice = (p) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p)
 }
 
+/**
+ * Thêm sản phẩm hiện tại cùng với các tùy chọn RAM, dung lượng, màu sắc đã chọn vào giỏ hàng trực tuyến.
+ * @param {boolean} [showMsg=true] - Quyết định xem có hiển thị Toast thông báo sau khi thêm thành công hay không.
+ * @returns {Promise<boolean>} Trả về True nếu thêm thành công, ngược lại là False.
+ */
 const addToCart = async (showMsg = true) => {
   if (submitting.value) return
 
@@ -371,6 +443,9 @@ const addToCart = async (showMsg = true) => {
   }
 }
 
+/**
+ * Thực hiện hành động mua ngay: thêm vào giỏ hàng và lập tức chuyển hướng tới trang thanh toán/giỏ hàng.
+ */
 const buyNow = async () => {
   const success = await addToCart(false)
   if (success) {
@@ -380,7 +455,7 @@ const buyNow = async () => {
 
 onMounted(() => {
   fetchProductDetail()
-  // Lắng nghe sự kiện cuộn chuột trên PC
+  // Lắng nghe sự kiện cuộn chuột trên PC cho phần danh sách ảnh thu nhỏ
   const container = document.querySelector('.thumbnail-list')
   if (container) {
     container.addEventListener('wheel', handleWheel, { passive: false })

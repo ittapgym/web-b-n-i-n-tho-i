@@ -51,16 +51,25 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const notification = useNotificationStore();
 
+/**
+ * Trạng thái biểu mẫu đăng nhập (Email và Mật khẩu).
+ */
 const form = reactive({
   email: '',
   password: ''
 });
 
+/**
+ * Lưu trữ thông tin lỗi của từng trường nhập liệu trong biểu mẫu đăng nhập.
+ */
 const errors = reactive({
   email: '',
   password: ''
 });
 
+/**
+ * Trạng thái tải (loading) khi đang xử lý gửi yêu cầu đăng nhập lên máy chủ.
+ */
 const loading = ref(false);
 
 onMounted(() => {
@@ -70,6 +79,10 @@ onMounted(() => {
   }
 });
 
+/**
+ * Xử lý đăng nhập tài khoản khách hàng.
+ * Kiểm tra hợp lệ email và gửi yêu cầu đăng nhập lên máy chủ, lưu Access Token và chuyển hướng.
+ */
 const handleLogin = async () => {
   // Reset errors
   errors.email = '';

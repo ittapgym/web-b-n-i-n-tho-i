@@ -101,7 +101,7 @@
                   <input type="checkbox" :value="p.id" v-model="selectedProductIds"
                      style="cursor: pointer; width: 16px; height: 16px;">
                </td>
-               <td style="width: 48px;"><img :src="p.hinh_anh || 'https://via.placeholder.com/48'"
+               <td style="width: 48px;"><img :src="formatImageUrl(p.hinh_anh) || 'https://via.placeholder.com/48'"
                      class="product-thumb"></td>
                <td>
                   <div class="bold small">{{ p.ten }}</div>

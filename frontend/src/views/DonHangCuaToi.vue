@@ -136,31 +136,52 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
+/**
+ * Danh sách các đơn hàng thuộc người dùng hiện tại.
+ */
 const orders = ref([])
 
+/**
+ * Kiểm tra xem người dùng hiện tại có phải là khách vãng lai (chưa đăng nhập) hay không.
+ */
 const isGuest = computed(() => {
   const token = localStorage.getItem('access_token') || localStorage.getItem('token')
   return !token
 })
 
-
+/**
+ * Trạng thái hiển thị và thông tin của custom Toast notification.
+ */
 const notification = ref({
   show: false,
   message: '',
   type: 'success'
 })
 
+/**
+ * Cấu hình của Modal xác nhận hành động xóa/ẩn đơn hàng.
+ */
 const confirmModal = ref({
   show: false,
   message: '',
   onConfirm: null
 })
 
+/**
+ * Hiển thị Toast thông báo trên màn hình.
+ * @param {string} msg - Nội dung thông báo.
+ * @param {string} [type='success'] - Phân loại thông báo (success, error, info).
+ */
 const showToast = (msg, type = 'success') => {
   notification.value = { show: true, message: msg, type: type }
   setTimeout(() => { notification.value.show = false }, 3000)
 }
 
+/**
+ * Kích hoạt hiển thị Modal xác nhận hành động của người dùng.
+ * @param {string} msg - Thông điệp hiển thị trên Modal.
+ * @param {Function} callback - Hàm thực thi sau khi bấm xác nhận.
+ */
 const triggerConfirm = (msg, callback) => {
   confirmModal.value = {
     show: true,
@@ -169,6 +190,10 @@ const triggerConfirm = (msg, callback) => {
   }
 }
 
+/**
+ * Đóng Modal xác nhận và quyết định có thực thi hành động hay không.
+ * @param {boolean} result - Kết quả phản hồi của người dùng (True: Đồng ý, False: Hủy).
+ */
 const closeConfirm = (result) => {
   if (result && confirmModal.value.onConfirm) {
     confirmModal.value.onConfirm()
@@ -176,6 +201,9 @@ const closeConfirm = (result) => {
   confirmModal.value.show = false
 }
 
+/**
+ * Tải danh sách đơn hàng trực tuyến của tài khoản hiện tại từ API.
+ */
 const fetchOrders = async () => {
   try {
     const token = localStorage.getItem('access_token') || localStorage.getItem('token')
@@ -194,6 +222,10 @@ const fetchOrders = async () => {
   }
 }
 
+/**
+ * Gửi yêu cầu ẩn đơn hàng chỉ định khỏi giao diện lịch sử mua sắm của User.
+ * @param {number} orderId - ID đơn hàng cần ẩn.
+ */
 const handleDeleteOrder = (orderId) => {
   triggerConfirm("Bạn có chắc chắn muốn ẩn đơn hàng này khỏi lịch sử của mình?", async () => {
     try {
@@ -217,6 +249,11 @@ const handleDeleteOrder = (orderId) => {
   })
 }
 
+/**
+ * Lấy nhãn tiếng Việt tương ứng cho mã trạng thái đơn hàng.
+ * @param {string} status - Mã trạng thái của đơn hàng từ backend.
+ * @returns {string} Chuỗi hiển thị thân thiện với người dùng.
+ */
 const getStatusText = (status) => {
   const map = {
     'cho_duyet': '⏳ Chờ xác nhận',
@@ -228,19 +265,40 @@ const getStatusText = (status) => {
   return map[status] || status
 }
 
+/**
+ * Lấy tên CSS class tương thích với trạng thái đơn hàng phục vụ đổi màu sắc giao diện.
+ * @param {string} status - Trạng thái đơn hàng.
+ * @returns {string} Tên class CSS tương ứng.
+ */
 const getStatusClass = (status) => {
   return `status-${status}`
 }
 
+/**
+ * Kiểm tra xem bước trạng thái hiện tại trong thanh tiến trình (timeline) có đang hoạt động hay không.
+ * @param {string} currentStatus - Trạng thái hiện tại thực tế của đơn hàng.
+ * @param {string} step - Bước trạng thái trên dòng thời gian đang xét.
+ * @returns {boolean} True nếu bước đó đã hoặc đang diễn ra, ngược lại là False.
+ */
 const isStepActive = (currentStatus, step) => {
   const levels = { 'cho_duyet': 1, 'da_duyet': 2, 'dang_giao': 3, 'hoan_thanh': 4, 'da_huy': 0 }
   return levels[currentStatus] >= levels[step]
 }
 
+/**
+ * Định dạng giá trị số thành chuỗi tiền tệ VND.
+ * @param {number} p - Số tiền cần định dạng.
+ * @returns {string} Chuỗi tiền tệ đã định dạng.
+ */
 const formatPrice = (p) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p)
 }
 
+/**
+ * Định dạng chuỗi ngày giờ hệ thống sang chuỗi ngày giờ định dạng địa phương Việt Nam.
+ * @param {string} dateStr - Chuỗi thời gian.
+ * @returns {string} Giao diện ngày giờ địa phương.
+ */
 const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleString('vi-VN')
 }

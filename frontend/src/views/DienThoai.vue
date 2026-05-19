@@ -13,13 +13,13 @@
           <div class="carousel-header">
             <h3>Tất cả sản phẩm</h3>
             <div class="carousel-nav">
-              <button class="nav-btn prev"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-              <button class="nav-btn next"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+              <button class="nav-btn prev" @click="scrollLeft"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <button class="nav-btn next" @click="scrollRight"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
             </div>
           </div>
           
           <div v-if="loading" class="loading-state">Đang tải sản phẩm...</div>
-          <div v-else-if="products.length > 0" class="product-grid">
+          <div v-else-if="products.length > 0" ref="gridRef" class="product-grid">
             <ProductCard v-for="p in products" :key="p.id" :product="p" />
           </div>
           <div v-else class="empty-carousel">
@@ -36,9 +36,42 @@ import { ref, onMounted } from 'vue';
 import ProductCard from '../components/ProductCard.vue';
 import { sanPhamApi } from '../services/api';
 
+/**
+ * Danh sách các sản phẩm thuộc danh mục điện thoại.
+ */
 const products = ref([]);
+
+/**
+ * Trạng thái tải dữ liệu sản phẩm từ máy chủ.
+ */
 const loading = ref(true);
 
+/**
+ * Tham chiếu đến phần tử HTML lưới sản phẩm phục vụ cuộn ngang.
+ */
+const gridRef = ref(null);
+
+/**
+ * Thực hiện cuộn mượt danh sách sản phẩm sang bên trái.
+ */
+const scrollLeft = () => {
+  if (gridRef.value) {
+    gridRef.value.scrollBy({ left: -350, behavior: 'smooth' });
+  }
+};
+
+/**
+ * Thực hiện cuộn mượt danh sách sản phẩm sang bên phải.
+ */
+const scrollRight = () => {
+  if (gridRef.value) {
+    gridRef.value.scrollBy({ left: 350, behavior: 'smooth' });
+  }
+};
+
+/**
+ * Tải danh sách sản phẩm điện thoại từ backend API.
+ */
 const fetchProducts = async () => {
   try {
     const res = await sanPhamApi.getByCategory('iphone');
@@ -157,11 +190,27 @@ onMounted(fetchProducts);
 }
 
 .product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  grid-auto-rows: 1fr;
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
   gap: 30px;
-  padding: 20px 0;
+  padding: 20px 10px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  
+  /* Hide scrollbar */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.product-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.product-grid :deep(.product-card) {
+  flex-shrink: 0;
+  width: 320px;
+  scroll-snap-align: start;
 }
 
 .loading-state {
@@ -172,7 +221,6 @@ onMounted(fetchProducts);
 
 @media (max-width: 1068px) {
   .showcase-title { font-size: 48px; }
-  .product-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 }
 
 @media (max-width: 734px) {
@@ -180,10 +228,8 @@ onMounted(fetchProducts);
   .showcase-title { font-size: 32px; }
   .showcase-visual { margin-bottom: 40px; }
   .carousel-header h3 { font-size: 22px; }
-  .product-grid { 
-    grid-template-columns: 1fr; 
-    gap: 15px; 
-    padding: 10px;
+  .product-grid :deep(.product-card) {
+    width: 280px;
   }
 }
 </style>

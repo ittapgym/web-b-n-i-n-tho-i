@@ -8,17 +8,47 @@ from fastapi import HTTPException
 class ShippingService:
     @staticmethod
     async def lay_danh_sach_don_vi(db: Session) -> List[DonViVanChuyen]:
-        """Tra ve cac phuong thuc van chuyen co san"""
+        """
+        Lấy danh sách các đơn vị vận chuyển đang kích hoạt hoạt động trong hệ thống.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            List[DonViVanChuyen]: Danh sách các đơn vị vận chuyển khả dụng.
+        """
         return db.query(DonViVanChuyen).filter(DonViVanChuyen.kich_hoat.is_(True)).all()
 
     @staticmethod
     async def lay_tat_ca_don_vi(db: Session) -> List[DonViVanChuyen]:
-        """Lay tat ca don vi van chuyen (cho Admin)"""
+        """
+        Lấy toàn bộ danh sách đơn vị vận chuyển phục vụ cho giao diện quản trị của Admin.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            List[DonViVanChuyen]: Danh sách tất cả đơn vị vận chuyển.
+        """
         return db.query(DonViVanChuyen).all()
 
     @staticmethod
     async def tinh_phi_ship(ma_don_vi: str, tong_bill: float, db: Session) -> float:
-        """Tinh phi ship dua tren don vi van chuyen va tong bill"""
+        """
+        Tính toán chi phí giao hàng dựa theo mã đơn vị vận chuyển và giá trị hóa đơn.
+        Áp dụng chính sách miễn phí giao hàng nếu tổng tiền vượt ngưỡng miễn phí của đơn vị đó.
+
+        Args:
+            ma_don_vi (str): Mã định danh của đơn vị giao hàng.
+            tong_bill (float): Tổng giá trị của đơn hàng để xét miễn phí giao hàng.
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+        Returns:
+            float: Chi phí giao hàng sau khi tính toán.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy đơn vị vận chuyển tương ứng.
+        """
         don_vi = (
             db.query(DonViVanChuyen)
             .filter(DonViVanChuyen.ma_don_vi == ma_don_vi)
@@ -38,7 +68,19 @@ class ShippingService:
 
     @staticmethod
     async def tao_don_vi(db: Session, data: DonViVanChuyenCreate) -> DonViVanChuyen:
-        """Admin them don vi van chuyen moi"""
+        """
+        Tạo mới một đơn vị vận chuyển trong hệ thống (Hành động từ Admin).
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            data (DonViVanChuyenCreate): Dữ liệu cấu hình đơn vị vận chuyển mới.
+
+        Returns:
+            DonViVanChuyen: Bản ghi đơn vị vận chuyển vừa được lưu.
+
+        Raises:
+            HTTPException: Lỗi 400 nếu mã đơn vị vận chuyển đã tồn tại trước đó.
+        """
         existing = (
             db.query(DonViVanChuyen)
             .filter(DonViVanChuyen.ma_don_vi == data.ma_don_vi)
@@ -57,7 +99,20 @@ class ShippingService:
     async def cap_nhat_don_vi(
         db: Session, id: int, data: DonViVanChuyenUpdate
     ) -> DonViVanChuyen:
-        """Admin cap nhat don vi van chuyen"""
+        """
+        Cập nhật thông tin chi tiết hoặc trạng thái kích hoạt của đơn vị vận chuyển.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            id (int): ID định danh của đơn vị vận chuyển cần sửa đổi.
+            data (DonViVanChuyenUpdate): Dữ liệu cập nhật mới.
+
+        Returns:
+            DonViVanChuyen: Đối tượng đơn vị vận chuyển sau cập nhật.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy đơn vị vận chuyển.
+        """
         don_vi = db.query(DonViVanChuyen).filter(DonViVanChuyen.id == id).first()
         if not don_vi:
             raise HTTPException(
@@ -74,7 +129,19 @@ class ShippingService:
 
     @staticmethod
     async def xoa_don_vi(db: Session, id: int):
-        """Admin xoa don vi van chuyen"""
+        """
+        Xóa một đơn vị vận chuyển khỏi hệ thống dựa vào ID chỉ định.
+
+        Args:
+            db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+            id (int): ID định danh đơn vị vận chuyển cần xóa.
+
+        Returns:
+            dict: Thông báo kết quả xóa đơn vị vận chuyển thành công.
+
+        Raises:
+            HTTPException: Lỗi 404 nếu không tìm thấy đơn vị vận chuyển.
+        """
         don_vi = db.query(DonViVanChuyen).filter(DonViVanChuyen.id == id).first()
         if not don_vi:
             raise HTTPException(

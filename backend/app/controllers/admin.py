@@ -16,7 +16,15 @@ router = APIRouter(prefix="/api/admin", tags=["Admin Dashboard"])
 
 @router.get("/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):
-    """Lấy số liệu thống kê tổng quan cho trang Dashboard"""
+    """
+    Lấy số liệu thống kê tổng quan cho trang Dashboard của hệ thống Admin.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy (được Dependency Inject).
+
+    Returns:
+        dict: Chứa thông tin doanh thu thực tế, tổng số đơn hàng, số người dùng và số sản phẩm.
+    """
     # Đếm số sản phẩm
     product_count = db.query(SanPham).count()
     # Đếm số người dùng
@@ -36,7 +44,15 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
 
 @router.get("/activities")
 def get_recent_activities(db: Session = Depends(get_db)):
-    """Lấy tối đa 50 hoạt động mới nhất của Admin, lọc bỏ các hoạt động làm mới/tải lại"""
+    """
+    Lấy danh sách tối đa 50 hoạt động gần đây nhất của các tài khoản Admin/Nhân sự quản lý.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        list: Danh sách các đối tượng hoạt động chứa thời gian, nhân viên thực hiện và hành động chi tiết.
+    """
     from app.models.hoatdong_admin import HoatDongAdmin
     from datetime import datetime
     
@@ -61,7 +77,19 @@ def get_recent_activities(db: Session = Depends(get_db)):
 
 @router.post("/upload")
 async def upload_file(request: Request, file: UploadFile = File(...)):
-    """Tải ảnh lên thư mục static/uploads và trả về URL (Chỉ nhận ảnh)"""
+    """
+    Tải tệp tin hình ảnh lên thư mục static/uploads của hệ thống backend.
+
+    Args:
+        request (Request): Đối tượng Request chứa thông tin host để sinh URL ảnh tuyệt đối.
+        file (UploadFile): Tệp tin ảnh được tải lên từ biểu mẫu multipart/form-data.
+
+    Returns:
+        dict: Chứa URL tuyệt đối của tệp hình ảnh sau khi tải lên thành công.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu định dạng file không được phép, hoặc 500 nếu ghi file thất bại.
+    """
     try:
         # Kiểm tra định dạng file
         ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
@@ -96,7 +124,16 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
 
 @router.get("/audit-logs")
 def get_audit_logs(db: Session = Depends(get_db)):
-    """Lấy danh sách nhật ký Audit của người dùng thực tế (không lấy admin/staff, không hiện dữ liệu mẫu admin)"""
+    """
+    Lấy và định dạng danh sách nhật ký kiểm toán (Audit Logs) và lịch sử đăng nhập của khách hàng thực tế.
+    Hàm này thực hiện dọn dẹp dữ liệu giả cũ và loại bỏ các tài khoản của admin/nhân sự quản lý.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        list: Danh sách nhật ký hành động đã sắp xếp theo thời gian mới nhất lên đầu.
+    """
     from app.models.nhat_ky_audit import NhatKyAudit
     from app.models.lichsu_dangnhap import LichSuDangNhap
     from app.models.nguoidung import NguoiDung
@@ -179,7 +216,15 @@ def get_audit_logs(db: Session = Depends(get_db)):
 
 @router.get("/loyalty-configs")
 def get_loyalty_configs(db: Session = Depends(get_db)):
-    """Lấy danh sách cấu hình hạng thành viên (Loyalty tiers)"""
+    """
+    Lấy danh sách tất cả các cấu hình hạng thành viên (Loyalty Tiers) trong hệ thống.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        list: Danh sách đối tượng chứa ID, tên hạng, điểm tối thiểu, phần trăm giảm giá, ưu đãi riêng biệt và màu sắc.
+    """
     from app.models.cau_hinh_loyalty import CauHinhLoyalty
     configs = db.query(CauHinhLoyalty).order_by(CauHinhLoyalty.diem_toi_thieu.asc()).all()
     return [
@@ -204,7 +249,20 @@ class LoyaltyUpdateSchema(BaseModel):
 
 @router.post("/loyalty-configs/{tier_id}")
 def update_loyalty_config(tier_id: int, payload: LoyaltyUpdateSchema, db: Session = Depends(get_db)):
-    """Cập nhật chi tiết cấu hình của một hạng thành viên"""
+    """
+    Cập nhật các thông số chi tiết cấu hình của một hạng thành viên (Loyalty Tier).
+
+    Args:
+        tier_id (int): ID của hạng thành viên cần cập nhật.
+        payload (LoyaltyUpdateSchema): Dữ liệu cập nhật (điểm tối thiểu, % giảm, màu sắc, ưu đãi).
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Chứa thông điệp xác nhận cập nhật thành công.
+
+    Raises:
+        HTTPException: Lỗi 404 nếu không tìm thấy hạng thành viên tương ứng.
+    """
     from app.models.cau_hinh_loyalty import CauHinhLoyalty
     from app.models.nhat_ky_audit import NhatKyAudit
     
@@ -243,7 +301,20 @@ class CustomerPointsUpdateSchema(BaseModel):
 
 @router.post("/customers/{customer_id}/points")
 def update_customer_points(customer_id: int, payload: CustomerPointsUpdateSchema, db: Session = Depends(get_db)):
-    """Cập nhật điểm tích lũy của khách hàng và tự động ghi log audit"""
+    """
+    Cập nhật điểm tích lũy của khách hàng, ghi nhận nhật ký kiểm toán (Audit Log) và hoạt động của Admin.
+
+    Args:
+        customer_id (int): ID của khách hàng cần cập nhật điểm.
+        payload (CustomerPointsUpdateSchema): Dữ liệu điểm tích lũy mới cần ghi nhận.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông tin khách hàng sau khi cập nhật (ID, họ tên, email, điểm tích lũy mới).
+
+    Raises:
+        HTTPException: Lỗi 404 nếu không tìm thấy khách hàng.
+    """
     from app.models.nguoidung import NguoiDung
     from app.models.nhat_ky_audit import NhatKyAudit
     
@@ -285,6 +356,12 @@ NOTIFICATIONS_FILE = os.path.normpath(
 )
 
 def read_notifications():
+    """
+    Đọc danh sách các chiến dịch thông báo từ tệp tin lưu trữ JSON.
+
+    Returns:
+        list: Danh sách các đối tượng chiến dịch thông báo đã gửi, hoặc mảng rỗng nếu tệp không tồn tại/lỗi.
+    """
     if not os.path.exists(NOTIFICATIONS_FILE):
         return []
     try:
@@ -294,6 +371,12 @@ def read_notifications():
         return []
 
 def write_notifications(data):
+    """
+    Ghi dữ liệu danh sách các chiến dịch thông báo mới vào tệp tin JSON tĩnh.
+
+    Args:
+        data (list): Mảng danh sách các thông báo cần lưu trữ.
+    """
     os.makedirs(os.path.dirname(NOTIFICATIONS_FILE), exist_ok=True)
     try:
         with open(NOTIFICATIONS_FILE, "w", encoding="utf-8") as f:
@@ -308,12 +391,29 @@ class NotificationSendSchema(BaseModel):
 
 @router.get("/notifications/campaigns")
 def get_campaigns():
-    """Lấy danh sách các chiến dịch thông báo đã gửi"""
+    """
+    API lấy danh sách toàn bộ các chiến dịch thông báo đẩy đã được gửi đi.
+
+    Returns:
+        list: Danh sách các chiến dịch thông báo đẩy được tải lên từ file JSON tĩnh.
+    """
     return read_notifications()
 
 @router.post("/notifications/send")
 def send_notification(payload: NotificationSendSchema, db: Session = Depends(get_db)):
-    """Gửi một chiến dịch thông báo mới và lưu trữ"""
+    """
+    API gửi và lưu trữ một chiến dịch thông báo đẩy mới đến nhóm đối tượng khách hàng mục tiêu.
+
+    Args:
+        payload (NotificationSendSchema): Tiêu đề, nội dung và nhóm đối tượng nhận thông báo.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Thông báo thành công và chi tiết đối tượng chiến dịch thông báo vừa gửi.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu dữ liệu trống hoặc nội dung vượt quá 3000 ký tự.
+    """
     if not payload.title.strip() or not payload.body.strip():
         raise HTTPException(status_code=400, detail="Tiêu đề và nội dung không được để trống!")
     if len(payload.body) > 3000:
@@ -347,7 +447,15 @@ def send_notification(payload: NotificationSendSchema, db: Session = Depends(get
 # --- ADMIN AI CHAT LOGS ---
 @router.get("/ai-logs")
 def get_ai_logs(db: Session = Depends(get_db)):
-    """API lấy danh sách lịch sử chat của Admin nhóm theo từng cuộc hội thoại (session)"""
+    """
+    API lấy danh sách lịch sử các cuộc hội thoại AI của Admin, nhóm theo mã định danh phiên (session_id).
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        list: Tối đa 20 phiên hội thoại mới nhất chứa chi tiết các cặp câu hỏi-trả lời và thời gian.
+    """
     from app.models.nhatky_ai import NhatKyChatAI
     logs = db.query(NhatKyChatAI).order_by(NhatKyChatAI.thoi_gian.asc()).all()
     
@@ -379,7 +487,15 @@ def get_ai_logs(db: Session = Depends(get_db)):
 
 @router.delete("/ai-logs/action/clear-all")
 def clear_all_ai_logs(db: Session = Depends(get_db)):
-    """API xóa toàn bộ lịch sử truy vấn Admin"""
+    """
+    Xóa toàn bộ lịch sử hội thoại AI của Admin khỏi cơ sở dữ liệu.
+
+    Args:
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công và thông báo phản hồi.
+    """
     from app.models.nhatky_ai import NhatKyChatAI
     db.query(NhatKyChatAI).delete()
     db.commit()
@@ -387,7 +503,16 @@ def clear_all_ai_logs(db: Session = Depends(get_db)):
 
 @router.delete("/ai-logs/{session_id}")
 def delete_ai_log(session_id: str, db: Session = Depends(get_db)):
-    """API xóa một cuộc hội thoại (session) hoặc dòng lịch sử cụ thể"""
+    """
+    Xóa một phiên hội thoại cụ thể hoặc một dòng tin nhắn chat cụ thể dựa trên khóa định danh.
+
+    Args:
+        session_id (str): Mã ID của phiên (hoặc ID số của dòng tin nhắn cụ thể).
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công và thông báo phản hồi.
+    """
     from app.models.nhatky_ai import NhatKyChatAI
     
     is_int = False
@@ -419,7 +544,16 @@ class AIChatLogCreateSchema(BaseModel):
 
 @router.post("/ai-logs")
 def create_ai_log(payload: AIChatLogCreateSchema, db: Session = Depends(get_db)):
-    """API lưu trữ một dòng hội thoại AI mới vào cơ sở dữ liệu"""
+    """
+    Lưu trữ một dòng câu hỏi và câu trả lời AI mới của admin vào cơ sở dữ liệu.
+
+    Args:
+        payload (AIChatLogCreateSchema): Nội dung câu hỏi, câu trả lời, email và ID phiên.
+        db (Session): Phiên kết nối Cơ sở dữ liệu SQLAlchemy.
+
+    Returns:
+        dict: Trạng thái thành công và ID của dòng nhật ký vừa được tạo.
+    """
     from app.models.nhatky_ai import NhatKyChatAI
     new_log = NhatKyChatAI(
         nguoi_dung_id=1,  # Admin ID
@@ -446,7 +580,18 @@ class AIChatProxySchema(BaseModel):
 
 @router.post("/ai-chat")
 def ai_chat_proxy(payload: AIChatProxySchema):
-    """Proxy API để vượt qua CORS và kết nối DeepSeek an toàn từ Server"""
+    """
+    API Proxy trung gian giúp frontend gửi yêu cầu hội thoại tới API DeepSeek bảo mật, tránh lỗi CORS.
+
+    Args:
+        payload (AIChatProxySchema): Bản tin hội thoại chứa tin nhắn hiện tại, lịch sử chat, ngữ cảnh và API Key.
+
+    Returns:
+        dict: Trạng thái thành công và nội dung câu trả lời từ trợ lý AI.
+
+    Raises:
+        HTTPException: Lỗi 400 nếu thiếu API Key, hoặc các mã lỗi HTTP từ server DeepSeek.
+    """
     import urllib.request
     from urllib.error import HTTPError, URLError
     
@@ -459,11 +604,15 @@ def ai_chat_proxy(payload: AIChatProxySchema):
     }
     
     system_prompt = (
-        "You are Peach Assistant, an extremely powerful, premium customer support and administrative intelligence for Peach Store.\n\n"
-        "Here is the absolute complete, real-time live database state of the store. You have full access to it. "
-        "Use this data to answer any administrative, business, inventory, financial, or client queries with 100% precision. "
-        "Always respond in Vietnamese in a helpful, highly professional tone:\n\n"
-        f"{payload.context or 'No live database context available.'}"
+        "You are Peach Assistant, an advanced administrative intelligence, data analyst, and coding assistant for Peach Store.\n\n"
+        "DATABASE CONTEXT:\n"
+        "You have full access to the complete real-time live database state below. Use it to answer any business, inventory, financial, support, employee, or user search queries with absolute mathematical precision. "
+        "If asked to search, filter, or count, perform the operations directly on this data. If asked to write scripts or solve programming queries, do it expertly.\n\n"
+        f"{payload.context or 'No live database context available.'}\n\n"
+        "GUIDELINES:\n"
+        "1. Respond in Vietnamese in a clear, professional, data-driven tone.\n"
+        "2. Do not restrict yourself with artificial conversational limits. If requested, provide detailed code, SQL queries, or data analysis.\n"
+        "3. Provide exact counts, names, and matches from the database context when answering lookup and search queries."
     )
     
     messages = [
@@ -542,16 +691,37 @@ class SystemConfigPayload(BaseModel):
 
 @router.get("/config")
 def get_system_config():
+    """
+    Lấy thông tin cấu hình hệ thống hiện tại của ứng dụng.
+
+    Returns:
+        dict: Cấu hình hệ thống gồm chế độ bảo trì, ngôn ngữ, footer, màu sắc, font chữ.
+    """
     return read_json_file(SYSTEM_CONFIG_FILE, DEFAULT_SYSTEM_CONFIG)
 
 @router.post("/config")
 def save_system_config(payload: SystemConfigPayload):
+    """
+    Cập nhật và lưu trữ cấu hình hệ thống mới vào file cấu hình JSON.
+
+    Args:
+        payload (SystemConfigPayload): Dữ liệu cấu hình mới cần lưu.
+
+    Returns:
+        dict: Trạng thái thành công và chi tiết cấu hình mới.
+    """
     write_json_file(SYSTEM_CONFIG_FILE, payload.dict())
     return {"success": True, "config": payload.dict()}
 
 
 @router.post("/clean-temp-data")
 def clean_temporary_data():
+    """
+    API dọn dẹp các dữ liệu tạm thời như cache hình ảnh, log thừa, phiên chat hết hạn để tối ưu bộ nhớ.
+
+    Returns:
+        dict: Trạng thái thành công và danh sách các hạng mục đã được tối ưu hóa.
+    """
     import time
     time.sleep(0.3)
     cleaned_items = [
@@ -633,10 +803,25 @@ class EmployeeLoginPayload(BaseModel):
 
 @router.get("/employees")
 def get_employees():
+    """
+    API lấy danh sách toàn bộ tài khoản nhân sự và quản trị viên hiện có.
+
+    Returns:
+        list: Danh sách thông tin tài khoản nhân sự từ file lưu trữ JSON.
+    """
     return read_json_file(EMPLOYEES_FILE, DEFAULT_EMPLOYEES)
 
 @router.post("/employees")
 def save_employee(payload: EmployeePayload):
+    """
+    API thêm mới hoặc cập nhật thông tin của một tài khoản nhân sự.
+
+    Args:
+        payload (EmployeePayload): Thông tin nhân sự (họ tên, vai trò, username, password, email, SĐT).
+
+    Returns:
+        dict: Trạng thái thành công và danh sách nhân sự mới nhất sau khi cập nhật.
+    """
     emps = read_json_file(EMPLOYEES_FILE, DEFAULT_EMPLOYEES)
     if payload.id:
         # Edit existing
@@ -657,6 +842,15 @@ def save_employee(payload: EmployeePayload):
 
 @router.delete("/employees/{emp_id}")
 def delete_employee_api(emp_id: int):
+    """
+    API xóa bỏ một tài khoản nhân sự dựa trên mã ID.
+
+    Args:
+        emp_id (int): Mã ID của nhân sự cần xóa.
+
+    Returns:
+        dict: Trạng thái thành công và danh sách nhân sự còn lại.
+    """
     emps = read_json_file(EMPLOYEES_FILE, DEFAULT_EMPLOYEES)
     emps = [e for e in emps if e["id"] != emp_id]
     write_json_file(EMPLOYEES_FILE, emps)
@@ -664,10 +858,25 @@ def delete_employee_api(emp_id: int):
 
 @router.get("/schedules")
 def get_schedules():
+    """
+    API lấy danh sách toàn bộ lịch phân ca làm việc của nhân sự.
+
+    Returns:
+        list: Danh sách lịch làm việc được tải từ file JSON tĩnh.
+    """
     return read_json_file(SCHEDULES_FILE, DEFAULT_SCHEDULES)
 
 @router.post("/schedules")
 def save_schedule(payload: SchedulePayload):
+    """
+    API lập mới hoặc sửa đổi lịch phân ca làm việc hiện có cho nhân viên.
+
+    Args:
+        payload (SchedulePayload): Chi tiết lịch làm việc (ID lịch, ID nhân viên, ca làm, ngày, ghi chú).
+
+    Returns:
+        dict: Trạng thái thành công và danh sách lịch làm việc mới nhất.
+    """
     schedules = read_json_file(SCHEDULES_FILE, DEFAULT_SCHEDULES)
     if payload.id:
         for i, s in enumerate(schedules):
@@ -684,6 +893,15 @@ def save_schedule(payload: SchedulePayload):
 
 @router.delete("/schedules/{sch_id}")
 def delete_schedule_api(sch_id: str):
+    """
+    API xóa bỏ một ca làm việc trong lịch dựa trên mã ca làm.
+
+    Args:
+        sch_id (str): Mã định danh ca làm cần xóa.
+
+    Returns:
+        dict: Trạng thái thành công và danh sách lịch làm còn lại.
+    """
     schedules = read_json_file(SCHEDULES_FILE, DEFAULT_SCHEDULES)
     schedules = [s for s in schedules if s["id"] != sch_id]
     write_json_file(SCHEDULES_FILE, schedules)
@@ -691,6 +909,18 @@ def delete_schedule_api(sch_id: str):
 
 @router.post("/employee-login")
 def employee_login(payload: EmployeeLoginPayload):
+    """
+    API xác thực thông tin đăng nhập của nhân sự và cập nhật thời gian đăng nhập mới nhất.
+
+    Args:
+        payload (EmployeeLoginPayload): Tài khoản và mật khẩu đăng nhập của nhân sự.
+
+    Returns:
+        dict: Trạng thái thành công và thông tin nhân sự vừa đăng nhập.
+
+    Raises:
+        HTTPException: Lỗi 401 nếu tài khoản hoặc mật khẩu không chính xác.
+    """
     emps = read_json_file(EMPLOYEES_FILE, DEFAULT_EMPLOYEES)
     for emp in emps:
         if emp["username"] == payload.username and emp["password"] == payload.password:

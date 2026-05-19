@@ -59,20 +59,33 @@ import { useNotificationStore } from '../stores/notification';
 const router = useRouter();
 const notification = useNotificationStore();
 
+/**
+ * Trạng thái biểu mẫu đăng ký tài khoản mới.
+ */
 const form = reactive({
   ho_ten: '',
   email: '',
   mat_khau: ''
 });
 
+/**
+ * Lưu trữ thông tin lỗi của từng trường nhập liệu trong biểu mẫu.
+ */
 const errors = reactive({
   ho_ten: '',
   email: '',
   mat_khau: ''
 });
 
+/**
+ * Trạng thái tải (loading) khi đang xử lý gửi yêu cầu đăng ký lên server.
+ */
 const loading = ref(false);
 
+/**
+ * Xử lý đăng ký tài khoản khách hàng mới.
+ * Thực hiện kiểm tra hợp lệ độ dài email và gửi yêu cầu đăng ký lên máy chủ.
+ */
 const handleRegister = async () => {
   // Reset errors
   Object.keys(errors).forEach(key => errors[key] = '');

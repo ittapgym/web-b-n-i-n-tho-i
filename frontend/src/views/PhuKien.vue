@@ -20,7 +20,7 @@
           <div class="carousel-header">
             <h3>Tất cả Phụ kiện</h3>
             <div class="carousel-nav">
-              <button class="nav-btn prev">
+              <button class="nav-btn prev" @click="scrollLeft">
                 <svg
                   viewBox="0 0 24 24"
                   width="20"
@@ -32,7 +32,7 @@
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
-              <button class="nav-btn next">
+              <button class="nav-btn next" @click="scrollRight">
                 <svg
                   viewBox="0 0 24 24"
                   width="20"
@@ -47,7 +47,7 @@
             </div>
           </div>
           <div v-if="loading" class="loading-state">Đang tải Phụ kiện...</div>
-          <div v-else-if="products.length > 0" class="product-grid">
+          <div v-else-if="products.length > 0" ref="gridRef" class="product-grid">
             <ProductCard v-for="product in products" :key="product.id" :product="product" />
           </div>
           <div v-else class="empty-carousel">
@@ -63,9 +63,42 @@
 import { ref, onMounted } from 'vue';
 import ProductCard from '../components/ProductCard.vue';
 
+/**
+ * Danh sách sản phẩm thuộc danh mục phụ kiện.
+ */
 const products = ref([]);
+
+/**
+ * Trạng thái tải dữ liệu sản phẩm phụ kiện.
+ */
 const loading = ref(true);
 
+/**
+ * Tham chiếu đến phần tử HTML lưới sản phẩm phục vụ cuộn ngang.
+ */
+const gridRef = ref(null);
+
+/**
+ * Thực hiện cuộn mượt lưới sản phẩm phụ kiện sang bên trái.
+ */
+const scrollLeft = () => {
+  if (gridRef.value) {
+    gridRef.value.scrollBy({ left: -350, behavior: 'smooth' });
+  }
+};
+
+/**
+ * Thực hiện cuộn mượt lưới sản phẩm phụ kiện sang bên phải.
+ */
+const scrollRight = () => {
+  if (gridRef.value) {
+    gridRef.value.scrollBy({ left: 350, behavior: 'smooth' });
+  }
+};
+
+/**
+ * Tải danh sách sản phẩm phụ kiện từ backend API.
+ */
 const fetchProducts = async () => {
   try {
     const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'}/san-pham/danh-muc/phu-kien`);
@@ -101,12 +134,28 @@ onMounted(fetchProducts);
 }
 
 .product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  grid-auto-rows: 1fr;
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
   gap: 30px;
-  padding: 20px 0;
+  padding: 20px 10px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
   text-align: left;
+  
+  /* Hide scrollbar */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.product-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.product-grid :deep(.product-card) {
+  flex-shrink: 0;
+  width: 320px;
+  scroll-snap-align: start;
 }
 
 .loading-state {
@@ -206,6 +255,9 @@ onMounted(fetchProducts);
 @media (max-width: 768px) {
   .showcase-title {
     font-size: 40px;
+  }
+  .product-grid :deep(.product-card) {
+    width: 280px;
   }
 }
 </style>

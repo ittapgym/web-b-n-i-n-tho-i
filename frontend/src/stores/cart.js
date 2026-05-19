@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia';
 import { gioHangApi, voucherApi, shippingApi, paymentApi } from '../services/api';
 
+/**
+ * Pinia Store quản lý trạng thái giỏ hàng toàn cục của ứng dụng Web Frontend.
+ * Đồng bộ hóa giỏ hàng của người dùng, tính toán chi phí vận chuyển, áp dụng voucher giảm giá
+ * và cung cấp dữ liệu thanh toán (Checkout).
+ */
 export const useCartStore = defineStore('cart', {
   state: () => ({
     items: [],
@@ -19,12 +24,31 @@ export const useCartStore = defineStore('cart', {
     checkoutLoading: false
   }),
   getters: {
+    /**
+     * Tính tổng số lượng tất cả các sản phẩm đang có trong giỏ hàng.
+     * 
+     * @param {Object} state - Trạng thái store hiện tại.
+     * @returns {number} Tổng số lượng sản phẩm.
+     */
     count: (state) => {
       return state.items.reduce((sum, item) => sum + item.so_luong, 0);
     },
+    /**
+     * Tính tổng tiền hàng thuần túy (chưa cộng phí vận chuyển, chưa trừ voucher giảm giá).
+     * 
+     * @param {Object} state - Trạng thái store hiện tại.
+     * @returns {number} Tổng tiền hàng.
+     */
     tongTienHang: (state) => {
       return state.items.reduce((sum, item) => sum + (item.san_pham?.gia || 0) * item.so_luong, 0);
     },
+    /**
+     * Tính tổng tiền thanh toán cuối cùng của đơn hàng.
+     * Công thức: Tổng thanh toán = Tổng tiền hàng - Số tiền giảm giá voucher + Phí vận chuyển.
+     * 
+     * @param {Object} state - Trạng thái store hiện tại.
+     * @returns {number} Tổng thanh toán cuối cùng.
+     */
     total: (state) => {
       // tong_thanh_toan_cuoi = tong_tien_hang - giam_gia_voucher + phi_ship
       const giamGia = state.appliedVoucher?.so_tien_giam || 0;
@@ -33,6 +57,10 @@ export const useCartStore = defineStore('cart', {
     }
   },
   actions: {
+    /**
+     * Gọi API tải giỏ hàng của người dùng đang đăng nhập từ máy chủ.
+     * Nếu không có token đăng nhập hợp lệ, giỏ hàng sẽ được reset về rỗng.
+     */
     async fetchCart() {
       const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       if (!token || token === 'null' || token === 'undefined') {
@@ -51,15 +79,26 @@ export const useCartStore = defineStore('cart', {
       }
     },
     
+    /**
+     * Thiết lập danh sách các sản phẩm trong giỏ hàng trực tiếp.
+     * 
+     * @param {Array} items - Danh sách sản phẩm mới.
+     */
     setItems(items) {
       this.items = items;
     },
     
+    /**
+     * Xóa sạch các sản phẩm trong giỏ hàng ở Client.
+     */
     clearCart() {
       this.items = [];
     },
 
     // ---- Shipping Methods ----
+    /**
+     * Tải danh sách các phương thức và đơn vị vận chuyển có sẵn từ API.
+     */
     async fetchShippingMethods() {
       try {
         const res = await shippingApi.getDonVi();
@@ -70,6 +109,12 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Chọn đơn vị vận chuyển và tự động tính toán phí vận chuyển dựa trên tổng giá trị giỏ hàng.
+     * Nếu chọn lại đúng đơn vị vận chuyển đang chọn, hệ thống sẽ bỏ chọn và đặt phí ship về 0.
+     * 
+     * @param {string} maDonVi - Mã định danh đơn vị vận chuyển.
+     */
     async setShipMethod(maDonVi) {
       // Reset if same method selected
       if (this.selectedShipMethod === maDonVi) {
@@ -90,6 +135,9 @@ export const useCartStore = defineStore('cart', {
     },
 
     // ---- Payment Methods ----
+    /**
+     * Tải danh sách các đối tác và phương thức thanh toán có sẵn từ API.
+     */
     async fetchPaymentMethods() {
       try {
         const res = await paymentApi.getDoiTac();
@@ -100,6 +148,11 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Chọn phương thức thanh toán cho đơn hàng.
+     * 
+     * @param {string} maPhuongThuc - Mã định danh phương thức thanh toán (ví dụ: 'chuyen_khoan', 'cod').
+     */
     setPaymentMethod(maPhuongThuc) {
       if (this.selectedPaymentMethod === maPhuongThuc) {
         this.selectedPaymentMethod = null;
@@ -109,6 +162,12 @@ export const useCartStore = defineStore('cart', {
     },
 
     // ---- Voucher ----
+    /**
+     * Áp dụng mã voucher giảm giá vào giỏ hàng hiện tại.
+     * Gửi yêu cầu kiểm tra tính hợp lệ của voucher và số tiền giảm giá tối đa dựa trên tổng tiền hàng.
+     * 
+     * @param {string} maVoucher - Mã code của voucher.
+     */
     async applyVoucherCode(maVoucher) {
       if (!maVoucher || maVoucher.trim() === '') {
         this.voucherError = 'Vui lòng nhập mã giảm giá';
@@ -141,12 +200,18 @@ export const useCartStore = defineStore('cart', {
       }
     },
 
+    /**
+     * Hủy bỏ voucher đang áp dụng khỏi giỏ hàng.
+     */
     removeVoucher() {
       this.appliedVoucher = null;
       this.voucherError = null;
     },
 
     // ---- Checkout helpers ----
+    /**
+     * Dọn dẹp toàn bộ giỏ hàng, đơn vị vận chuyển, phương thức thanh toán và voucher sau khi đã đặt hàng thành công.
+     */
     clearCartAfterOrder() {
       this.items = [];
       this.selectedShipMethod = null;
